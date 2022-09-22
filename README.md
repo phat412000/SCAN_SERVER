@@ -1,2 +1,3 @@
 # SCAN_SEVER
-gggggg
+thêm thuật toán Kmeans trong file code của Phát
+
