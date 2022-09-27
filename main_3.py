@@ -16,14 +16,14 @@ np.set_printoptions(threshold = sys.maxsize)
 
 
 MIN_BACTERIA_SIZE = 20  
-OFFSET_BETWEEN_CLUSTER = 10 #[H]ue distance 
+OFFSET_BETWEEN_CLUSTER = 5 #[H]ue distance 
 DEFAULT_CLUSTER_NUMBER = 7 #7 basic colors
 
 def estimate_cluster_number_by_offset(kmeans):
     unique_clusters = []
     
     total_cluster_center_number = len(kmeans.cluster_centers_)
-    print (kmeans.cluster_centers_)
+    print ("Kmeans ID: ", kmeans.cluster_centers_)
     checkpoints = [False] * total_cluster_center_number
     
     for i in range(total_cluster_center_number):
@@ -48,7 +48,7 @@ def estimate_cluster_number_by_offset(kmeans):
      
     return len(unique_clusters)
 
-def KMeansFunction(BacteriaHsvColors):
+def KMeansFunction(BacteriaHsvColors): 
     global OFFSET_BETWEEN_CLUSTER, DEFAULT_CLUSTER_NUMBER
 
     kmeans = KMeans(n_clusters=DEFAULT_CLUSTER_NUMBER, random_state=0).fit(BacteriaHsvColors)
@@ -94,21 +94,22 @@ def detectAndTrimDisk(image, padding_size):
     mask = np.zeros_like(image)
     
     cv2.circle(mask, biggestCenter, biggestRadius - padding_size, (255, 255,255), -1) #-1 is fill-up circle 
-    #cv2.imshow('image', image)
+    # cv2.imshow('image', image
     roi = cv2.bitwise_and(image, mask)
    
     roi[roi <= 10] = 255
 
     return roi
 
-image0 = cv2.imread(r"C:\Users\admin\Desktop\do_an_scan\Image file\bacteria_test.jpg")
+image0 = cv2.imread(r"C:\Users\admin\Desktop\do_an_scan\Image file\bacteria_test_1.jpg")
 image = image0.copy()
 image1 = image0.copy()
+cv2.imshow('Cropped Image1', image)
 image = detectAndTrimDisk(image, 20)
-cv2.imshow('Cropped Image', image)
+cv2.imshow('TrimDisk Image', image)
 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 Hsv = cv2.cvtColor(image1, cv2.COLOR_BGR2HSV)
-cv2.imshow('gray', gray)
+#cv2.imshow('gray', gray)
 #cv2.imshow("HSV", Hsv)
 
 
@@ -121,10 +122,11 @@ local_max = peak_local_max(distance_map, indices=False, min_distance=10) #3
 markers = ndimage.label(local_max, structure=np.ones((3, 3)))[0]
 labels = watershed(-distance_map, markers, mask=thresh)
 
-countBacteria = 0 
-bacteriaColonies = []
+countBacteria     = 0 
+bacteriaColonies  = []
 BacteriaHsvColors = []
-bacteriaCenters = []
+bacteriaCenters   = []
+
 
 uniqueLabels = np.unique(labels)
 
@@ -173,6 +175,13 @@ for label in np.unique(labels):
     BacteriaHsvColors.append(InputKmeans)
 
 pred_label = KMeansFunction(BacteriaHsvColors)
+print ("test", pred_label)
+
+AmountColors = np.array(pred_label)
+unique, counts = np.unique(AmountColors, return_counts = True)
+print(dict(zip(unique, counts)))
+
+
 for c, i in zip(bacteriaCenters, pred_label):
     if(i != 0):
         cv2.putText(image1, str(i), (c[0], c[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
@@ -182,6 +191,7 @@ for c, i in zip(bacteriaCenters, pred_label):
 cv2.imshow("dhk", image1)
 
 kmeans_display(np.array(BacteriaHsvColors), pred_label)
+
 
 print("total " + str(countBacteria) + " bacteria colony")
 
