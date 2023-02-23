@@ -5,32 +5,571 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:GIAO_DIEN"
         mc:Ignorable="d"
-        Title="MainWindow" Background="White" BorderBrush="Red" MinWidth="7" Width="1200" Height="600">
-    <Grid x:Name="OpenFileButton">
+        Title="MainWindow" Background="White" BorderBrush="Red" MinWidth="7" Width="1551.63" Height="784">
+    <Grid x:Name="OpenFileButton" Margin="0,0,-6.4,-1.6">
 
 
-        <Canvas HorizontalAlignment="Left" Height="32" VerticalAlignment="Top" Width="1193" Background="#FF007ACC"/>
+        <Canvas HorizontalAlignment="Left" Height="32" VerticalAlignment="Top" Width="1489" Background="#FF007ACC"/>
         <Canvas x:Name="OpenFileCanvas" HorizontalAlignment="Left" Height="32" VerticalAlignment="Top" Width="64"/>
         <Button x:Name="FileButton" Content="File" HorizontalAlignment="Left" VerticalAlignment="Top" Width="64" Height="32" Background="{x:Null}" BorderBrush="{x:Null}" FontFamily="Calibri" FontSize="16" FontWeight="Bold" Foreground="White" Click="FileButton_Click"/>
-        <ScrollViewer HorizontalAlignment="Left" Height="447" Margin="0,32,0,0" VerticalAlignment="Top" Width="604" HorizontalScrollBarVisibility="Visible">
+
+
+        <ScrollViewer HorizontalAlignment="Left" Height="586" Margin="3,70,0,0" VerticalAlignment="Top" Width="848" HorizontalScrollBarVisibility="Visible">
             <Canvas x:Name="ImgScreen_Canvas" HorizontalAlignment="Left" Height="964" VerticalAlignment="Top" Width="1248" Background="#FFEEEEF2">
-                <Image x:Name="ImgScreen" Height="429" Width="583"/>
-                <Canvas x:Name="Canvas_On_ImgScreen" Height="429" Width="583"/>
-                <Button Canvas.Left="327" Canvas.Top="309" Width="256" Height="78" Background="{x:Null}">
-                    <TextBlock TextWrapping="Wrap" Width="191"><Run Text=""/><InlineUIContainer>
-                            <Canvas Height="68" Width="100">
-                                <Canvas.Background>
-                                    <ImageBrush/>
-                                </Canvas.Background>
-                            </Canvas>
-                        </InlineUIContainer></TextBlock>
-                </Button>
+                <Image x:Name="ImgScreen" Height="567" Width="828" MouseMove="ImgScreen_MouseMove" MouseUp="ImgScreen_MouseUp" MouseDown="ImgScreen_MouseDown"/>
+                <Canvas x:Name="Canvas_On_ImgScreen" Height="567" Width="828" PreviewMouseLeftButtonDown="Canvas_On_ImgScreen_PreviewMouseLeftButtonDown" PreviewMouseLeftButtonUp="Canvas_On_ImgScreen_PreviewMouseLeftButtonUp" PreviewMouseMove="Canvas_On_ImgScreen_PreviewMouseMove" MouseMove="Canvas_On_ImgScreen_MouseMove"/>
+
             </Canvas>
         </ScrollViewer>
-        <Canvas x:Name="ButtonFile_canvas" HorizontalAlignment="Left" Height="25" Margin="0,32,0,0" VerticalAlignment="Top" Width="100" Background="White">
-            <Button x:Name="OpenFileButton1" Content="Open File" Width="100" Height="22" Click="OpenFileButton1_Click" Background="{x:Null}" BorderBrush="{x:Null}"/>
+        <Canvas x:Name="WelcomeScreen" HorizontalAlignment="Left" Height="583" Margin="901,71,0,0" VerticalAlignment="Top" Width="588">
+            <Canvas.Background>
+                <ImageBrush ImageSource="Image/BackGround.jpg" />
+            </Canvas.Background>
+            <Button x:Name="AutoBtn" Content="Auto" Canvas.Left="322" Canvas.Top="470" Width="197" Height="56" FontSize="20" FontWeight="Bold" Foreground="White" BorderBrush="#FF026EB7" BorderThickness="3" Background="#FF007ACC" Click="AutoBtn_Click">
+                <Button.Resources>
+                    <Style TargetType="{x:Type Border}">
+                        <Setter Property="CornerRadius" Value="10"/>
+                    </Style>
+                </Button.Resources>
+            </Button>
+            <Button x:Name="ManualBtn" Content="Manual" Click="ManualBtn_Click" FontSize="20" FontWeight="Bold" Foreground="White" BorderBrush="White"  BorderThickness="1" Background="{x:Null}" Height="55" Canvas.Left="72" Canvas.Top="471" Width="200" RenderTransformOrigin="1,1">
+                <Button.Resources>
+                    <Style TargetType="{x:Type Border}">
+                        <Setter Property="CornerRadius" Value="10"/>
+                    </Style>
+                </Button.Resources>
+            </Button>
+            <Label Content="Welcome to &#xD;&#xA;Labone's Technology!" Canvas.Left="33" Canvas.Top="121" Foreground="White" FontSize="48" FontWeight="Bold">
+                <Label.Effect>
+                    <DropShadowEffect/>
+                </Label.Effect>
+            </Label>
+            <Label Content="Please, choose mode to continue" Canvas.Left="33" Canvas.Top="258" Foreground="White" FontSize="16" FontWeight="Bold">
+                <Label.Effect>
+                    <DropShadowEffect/>
+                </Label.Effect>
+            </Label>
         </Canvas>
-        <Image HorizontalAlignment="Left" Height="48" Margin="535,412,0,0" VerticalAlignment="Top" Width="47"/>
+        <Canvas x:Name="AutoScreen" HorizontalAlignment="Left" Height="583" Margin="901,71,0,0" VerticalAlignment="Top" Width="588" Background="White">
+            <Canvas.Effect>
+                <DropShadowEffect Opacity="0.2" ShadowDepth="8" Direction="235"/>
+            </Canvas.Effect>
+            <Canvas HorizontalAlignment="Left" Height="32" VerticalAlignment="Top" Width="588" Background="#FF007ACC"/>
+            <StackPanel Height="32" Width="146" Orientation="Horizontal">
+                <Image Width="34" Source="Image/icons8-ai-96.png"/>
+                <Label Content="Auto" FontSize="16"  Foreground="White" Margin="0,0,33,0"/>
+            </StackPanel>
+            <Button x:Name="ExitAutoScreen"  HorizontalAlignment="Left" Background="{x:Null}" BorderBrush="{x:Null}" VerticalAlignment="Top" Width="36" Height="32" ToolTip="Exit" Canvas.Left="552" Click="ExitAutoScreen_Click" >
+                <TextBlock TextWrapping="Wrap" Width="51" RenderTransformOrigin="0.5,0.5">
+                    <TextBlock.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform/>
+                            <SkewTransform/>
+                            <RotateTransform Angle="-0.079"/>
+                            <TranslateTransform/>
+                        </TransformGroup>
+                    </TextBlock.RenderTransform><InlineUIContainer>
+                        <Image Height="27" Width="30" Source="Image/icons8-close-96.png" RenderTransformOrigin="3.492,1.311"/>
+                    </InlineUIContainer></TextBlock>
+            </Button>
+            <Border BorderBrush="Black" BorderThickness="1" Height="583" Width="588">
+                <StackPanel Margin="0.2,32.2,0.4,-0.4">
+                    <TextBlock Foreground="Black" FontSize="14"  Text="Counting" Margin="7,0,0,0" Height="20" VerticalAlignment="Top" Width="541" FontWeight="Bold"/>
+                    <StackPanel Margin="0,0,0.4,0" Height="93" RenderTransformOrigin="0.5,0.5" Background="WhiteSmoke">
+                        <Grid   Height="73" Margin="0,0,0.4,0" >
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="25"/>
+                                <RowDefinition Height="25"/>
+                                <RowDefinition Height="32.8"/>
+                                <RowDefinition Height="18.4"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition MaxWidth="200"/>
+                                <ColumnDefinition/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Grid.Row="0" VerticalAlignment="Top" Height="25" Grid.RowSpan="2">
+                                <TextBlock Text="Count" FontSize="14" Margin="24,8,0,0"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Grid.Row="0" VerticalAlignment="Top" Height="25" Grid.RowSpan="2">
+                                <Button Content="Count" x:Name="CountBtn_A" Width="60" HorizontalAlignment="Left" Margin="0,5,0,0"  />
+                            </StackPanel>
+                            <StackPanel Grid.Column="0" Grid.Row="1" Margin="0,0.2,0,0" VerticalAlignment="Top" Height="25" Grid.RowSpan="2">
+                                <TextBlock Text="Total Count" FontSize="14" Margin="24,7,0,0"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Grid.Row="1" Margin="0,1.2,0,0" Height="25" VerticalAlignment="Top" Orientation="Horizontal" Grid.RowSpan="2">
+                                <TextBox x:Name="Total_Count_Value_A"  FontSize="14" Width="100" Margin="0,3,0,0.8"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="0" Grid.Row="2" Margin="0,0.4,0,0" VerticalAlignment="Top" Height="25">
+                                <TextBlock Text="Edit" FontSize="14" Margin="24,6,0,0"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Grid.Row="2" Margin="0,0.4,0,0" VerticalAlignment="Top" Height="25">
+                                <Button Content="Edit" x:Name="EditCount_A" Width="60" HorizontalAlignment="Left" Margin="0,3,0,0"  />
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                    <Expander Header="Cropping" FontSize="14" Margin="0,0,-0.2,0" IsExpanded="True" Background="#FFEEEEF2"  >
+                        <StackPanel Background="WhiteSmoke" Height="243" Margin="0,0,0.4,0">
+
+                            <Grid Height="242" Margin="0,0,0.4,0" >
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="74*"/>
+
+                                    <RowDefinition Height="53*"/>
+                                    <RowDefinition Height="90"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition MaxWidth="200"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,8,0,0" VerticalAlignment="Top" Height="23">
+                                    <TextBlock Foreground="Black" FontSize="14" Text="Circle" Margin="24,0,0,0"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="0" Grid.Row="1" Margin="0,4.4,0,0" VerticalAlignment="Top" Height="22">
+                                    <TextBlock Foreground="Black" FontSize="14" Text="Rectangle" Margin="24,0,0,0"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Grid.Row="0" Margin="0,7,0.2,0" VerticalAlignment="Top" Height="62">
+                                    <CheckBox x:Name="size90mm_A" Content="90mm" FontSize="14" Margin="0"/>
+                                    <CheckBox x:Name="size100mm_A" Content="100mm" FontSize="14" Margin="0,6,0,0"/>
+                                    <CheckBox x:Name="size150mm_A" Content="150mm" FontSize="14" Margin="0,5,0,0"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Grid.Row="1" Margin="0,7.4,0.2,-16.6" VerticalAlignment="Top" Height="62">
+                                    <CheckBox x:Name="size150x300mm_A" Content="150x300mm" FontSize="14"/>
+                                    <CheckBox x:Name="size200x300mm_A" Content="200x300mm" FontSize="14" Margin="0,5,0,0"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="0" Grid.Row="2" VerticalAlignment="Top" Height="90" Margin="0,0,0,-0.4">
+                                    <TextBlock Foreground="Black" FontSize="14" Text="Send ABC" Padding="0,3,0,0" Margin="24,0,0,0"/>
+                                    <TextBlock Foreground="Black" FontSize="14" Text="Confirm" Margin="24,5,0,0" Padding="0,5,0,0"/>
+                                    <TextBlock Foreground="Black" FontSize="14" Text="Clear" Margin="24,5,0,0" Padding="0,5,0,0"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Grid.Row="2" Margin="0,0,0.4,-0.4" VerticalAlignment="Top" Height="90">
+                                    <Button Content="Send" x:Name="SendCropImgBtn_A" Width="60" HorizontalAlignment="Left" Margin="0"  />
+                                    <Button Content="Confirm" x:Name="ConfirmBtn_A" Width="60" HorizontalAlignment="Left" Margin="0,5,0,0"  />
+                                    <Button Content="Clear" x:Name="ClearBtn_A" Width="60" HorizontalAlignment="Left" Margin="0,5,0,0"  />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Expander>
+                </StackPanel>
+
+            </Border>
+        </Canvas>
+        <Canvas x:Name="ManualScreen" HorizontalAlignment="Left" Height="583" Margin="901,71,0,0" VerticalAlignment="Top" Width="588" Background="#FFFFFDFD">
+            <Canvas.Effect>
+                <DropShadowEffect Opacity="0.2" ShadowDepth="8" Direction="235"/>
+            </Canvas.Effect>
+            <Canvas HorizontalAlignment="Left" Height="32" VerticalAlignment="Top" Width="588" Background="#FF007ACC"/>
+            <StackPanel Height="32" Width="146" Orientation="Horizontal">
+                <Image Width="34" Source="Image/icons8-manual-96.png"/>
+                <Label Content="Manual" FontSize="16"  Foreground="White" Margin="0,0,33,0"/>
+            </StackPanel>
+            <Button x:Name="ExitManualScreen"  HorizontalAlignment="Left" Background="{x:Null}" BorderBrush="{x:Null}" VerticalAlignment="Top" Width="36" Height="32" ToolTip="Exit" Canvas.Left="552" Click="ExitManualScreen_Click" >
+                <TextBlock TextWrapping="Wrap" Width="51" RenderTransformOrigin="0.5,0.5">
+                    <TextBlock.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform/>
+                            <SkewTransform/>
+                            <RotateTransform Angle="-0.079"/>
+                            <TranslateTransform/>
+                        </TransformGroup>
+                    </TextBlock.RenderTransform><InlineUIContainer>
+                        <Image Height="27" Width="30" Source="Image/icons8-close-96.png" RenderTransformOrigin="3.492,1.311"/>
+                    </InlineUIContainer></TextBlock>
+            </Button>
+
+            <Border BorderBrush="Black" BorderThickness="1" Height="551" Width="588" Canvas.Top="32">
+                <ScrollViewer Margin="-0.8,0.2,0.4,-1.4">
+                    <StackPanel Height="784">
+                        <StackPanel Height="114" Width="566">
+                            <TextBlock Foreground="Black" FontSize="14"  Text="Counting" Margin="24,0,0,0" Height="20" VerticalAlignment="Top" Width="541" FontWeight="Bold"/>
+                            <StackPanel Margin="0,0,0.4,0" Height="93" RenderTransformOrigin="0.5,0.5" Background="WhiteSmoke">
+                                <Grid   Height="73" Margin="0,0,0.4,0" >
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="25"/>
+                                        <RowDefinition Height="25"/>
+                                        <RowDefinition Height="25"/>
+                                        <RowDefinition Height="25"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition MaxWidth="200"/>
+                                        <ColumnDefinition/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" Grid.Row="0" VerticalAlignment="Top" Height="25" Grid.RowSpan="2">
+                                        <TextBlock Text="Count" FontSize="14" Margin="24,8,0,0"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Grid.Row="0" Margin="0,0,0.4,0" VerticalAlignment="Top" Height="25" Grid.RowSpan="2">
+                                        <Button Content="Count" x:Name="CountBtn" Width="60" HorizontalAlignment="Left" Margin="0,5,0,0" Click="CountBtn_Click" RenderTransformOrigin="-5.253,48.658"  />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="0" Grid.Row="1" Margin="0,0.2,0,0" VerticalAlignment="Top" Height="25" Grid.RowSpan="2">
+                                        <TextBlock Text="Total Count" FontSize="14" Margin="24,7,0,0"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Grid.Row="1" Margin="0,1.2,0.4,0" Height="25" VerticalAlignment="Top" Orientation="Horizontal" Grid.RowSpan="2">
+                                        <TextBox x:Name="Total_Count_Value" FontSize="14" Width="138" Margin="0,3,0,0.6"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="0" Grid.Row="2" Margin="0,0.4,0,0" VerticalAlignment="Top" Height="25">
+                                        <TextBlock Text="Edit" FontSize="14" Margin="24,6,0,0"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Grid.Row="2" Margin="0,0,0.4,0" VerticalAlignment="Top" Height="25" Grid.RowSpan="2">
+                                        <Button Content="Edit" x:Name="EditCount" Width="60" HorizontalAlignment="Left" Margin="0,4,0,0"  />
+                                    </StackPanel>
+
+                                </Grid>
+                            </StackPanel>
+
+                        </StackPanel>
+                        <Expander Header="Cropping" FontSize="14" Margin="0,0,-0.2,0" IsExpanded="True" Background="#FFEEEEF2"  >
+                            <StackPanel Background="WhiteSmoke" Height="243" Margin="0,0,0.4,0">
+
+                                <Grid Height="242" Margin="0,0,0.4,0" >
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="74*"/>
+
+                                        <RowDefinition Height="53*"/>
+                                        <RowDefinition Height="90"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition MaxWidth="200"/>
+                                        <ColumnDefinition/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" Margin="0,8,0,0" VerticalAlignment="Top" Height="23">
+                                        <TextBlock Foreground="Black" FontSize="14" Text="Circle" Margin="24,0,0,0"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="0" Grid.Row="1" Margin="0,4.4,0,0" VerticalAlignment="Top" Height="22">
+                                        <TextBlock Foreground="Black" FontSize="14" Text="Rectangle" Margin="24,0,0,0"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Grid.Row="0" Margin="0,7,0.2,0" VerticalAlignment="Top" Height="62">
+                                        <CheckBox x:Name="size90mm" Content="90mm" FontSize="14" Margin="0,0,0.4,0" HorizontalAlignment="Right" Width="366" Checked="Size90mm_Checked"/>
+                                        <CheckBox x:Name="size100mm" Content="100mm" FontSize="14" Margin="0,6,0,0" Checked="Size100mm_Checked"/>
+                                        <CheckBox x:Name="size150mm" Content="150mm" FontSize="14" Margin="0,5,0,0" Checked="Size150mm_Checked"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Grid.Row="1" Margin="0,7.4,0.2,-16.6" VerticalAlignment="Top" Height="62">
+                                        <CheckBox x:Name="size150x300mm" Content="150x300mm" FontSize="14" Checked="Size150x300mm_Checked"/>
+                                        <CheckBox x:Name="size200x300mm" Content="200x300mm" FontSize="14" Margin="0,5,0,0" Checked="Size200x300mm_Checked"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="0" Grid.Row="2" VerticalAlignment="Top" Height="90" Margin="0,0,0,-0.4">
+                                        <TextBlock Foreground="Black" FontSize="14" Text="Send ABC" Padding="0,3,0,0" Margin="24,0,0,0"/>
+                                        <TextBlock Foreground="Black" FontSize="14" Text="Confirm" Margin="24,5,0,0" Padding="0,5,0,0"/>
+                                        <TextBlock Foreground="Black" FontSize="14" Text="Clear" Margin="24,5,0,0" Padding="0,5,0,0"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Grid.Row="2" Margin="0,0,0.4,-0.4" VerticalAlignment="Top" Height="90">
+                                        <Button Content="Send" x:Name="SendCropImgBtn" Width="60" HorizontalAlignment="Left" Margin="0" Click="SendCropImgBtn_Click"  />
+                                        <Button Content="Confirm" x:Name="ConfirmBtn" Width="60" HorizontalAlignment="Left" Margin="0,5,0,0" Click="ConfirmBtn_Click"  />
+                                        <Button Content="Clear" x:Name="ClearBtn" Width="60" HorizontalAlignment="Left" Margin="0,5,0,0" Click="ClearBtn_Click"  />
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </Expander>
+                        <Expander Header="Adjustments" FontSize="14" IsExpanded="True" Height="192" >
+                            <StackPanel Background="WhiteSmoke" Height="250" Margin="0,0,-0.2,0">
+                                <Grid Height="242" Margin="0,0,0.4,0" >
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="25"/>
+
+                                        <RowDefinition Height="25"/>
+                                        <RowDefinition Height="25"/>
+                                        <RowDefinition Height="25"/>
+                                        <RowDefinition Height="25"/>
+                                        <RowDefinition Height="25"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition MaxWidth="200"/>
+                                        <ColumnDefinition/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" Grid.Row="0" VerticalAlignment="Top" Height="25" Grid.RowSpan="2">
+                                        <TextBlock Text="Enable Color Filter" FontSize="14" Margin="24,8,0,0"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Grid.Row="0" Margin="0,0,0.4,0" VerticalAlignment="Top" Height="25" Grid.RowSpan="2">
+                                        <CheckBox x:Name="ColorFilter_Enable" Content="" FontSize="14" Margin="0,11,0,0" Checked="ColorFilter_Enable_Checked" Unchecked="ColorFilter_Enable_Unchecked"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="0" Grid.Row="1" Margin="0,0,0.4,0" VerticalAlignment="Top" Height="87" Grid.RowSpan="2">
+                                        <TextBlock Text="H Channel" FontSize="14" Margin="24,8,0,0"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="0" Grid.Row="2" Margin="0,0,0.4,0" VerticalAlignment="Top" Height="25" Grid.RowSpan="2">
+                                        <TextBlock Text="S Channel" FontSize="14" Margin="24,8,0,0"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="0" Grid.Row="3" Margin="0,0,0.4,0" VerticalAlignment="Top" Height="25" Grid.RowSpan="2">
+                                        <TextBlock Text="V Channel" FontSize="14" Margin="24,8,0,0"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="0" Grid.Row="1" Margin="0,0,0.4,0" VerticalAlignment="Top" Height="25" Grid.RowSpan="2">
+                                        <TextBlock Text="H Channel" FontSize="14" Margin="24,8,0,0"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Grid.Row="1" Margin="0,1,0.4,0" Height="25" VerticalAlignment="Top" Orientation="Horizontal">
+                                        <Slider x:Name="H_Slider"  BorderBrush="{x:Null}" Foreground="#FFFCFCFC" Background="White" Width="200" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="0" Minimum="0" Maximum="255" SmallChange="1" TickFrequency="0.5"  ValueChanged="H_Slider_ValueChanged" PreviewMouseUp="H_Slider_PreviewMouseUp"/>
+                                        <TextBox x:Name="H_Slider_Value" FontSize="14" Width="60
+                                                 " Margin="9,3,0,0.8"
+                                                  DockPanel.Dock="Right" TextChanged="H_Slider_Value_TextChanged"/>
+                                        <Button x:Name="OK_H"  Content="OK" BorderThickness="1" Click= "OK_H_Click" Margin="11,0,0,0.8" RenderTransformOrigin="0.57,-3.181" Height="21" VerticalContentAlignment="Top" VerticalAlignment="Bottom" Width="35" >
+                                            <Button.Resources>
+                                                <Style TargetType="{x:Type Border}">
+                                                    <Setter Property="CornerRadius" Value="10"/>
+                                                </Style>
+                                            </Button.Resources>
+                                        </Button>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Grid.Row="2" Margin="0,7,0.4,0" VerticalAlignment="Top" Height="25" Grid.RowSpan="2" Orientation="Horizontal">
+                                        <Slider x:Name="S_Slider" BorderBrush="{x:Null}" Foreground="#FFFCFCFC" Background="White" Width="200" HorizontalAlignment="Left" Height="17.6" Maximum="100" SmallChange="1" TickFrequency="0.5" ValueChanged="S_Slider_ValueChanged" PreviewMouseUp="S_Slider_PreviewMouseUp"/>
+                                        <TextBox x:Name="S_Slider_Value" FontSize="14" Width="60" Margin="9,0,0,3.8"
+                                                  DockPanel.Dock="Right" TextChanged="S_Slider_Value_TextChanged"/>
+                                        <Button x:Name="OK_S"   Content="OK"  BorderThickness="1" Click="OK_S_Click" Margin="11,0,0,3.8" RenderTransformOrigin="2.215,0.617" Height="21" VerticalContentAlignment="Top" VerticalAlignment="Bottom" Width="35" >
+                                            <Button.Resources>
+                                                <Style TargetType="{x:Type Border}">
+                                                    <Setter Property="CornerRadius" Value="10"/>
+                                                </Style>
+                                            </Button.Resources>
+                                        </Button>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Grid.Row="3" Margin="0,8,0.4,0" VerticalAlignment="Top" Height="25" Grid.RowSpan="2" Orientation="Horizontal">
+                                        <Slider x:Name="V_Slider" BorderBrush="{x:Null}" Foreground="#FFFCFCFC" Background="White" Width="200" HorizontalAlignment="Left" Height="17.6" Maximum="100" SmallChange="1" TickFrequency="0.5" ValueChanged="V_Slider_ValueChanged" PreviewMouseUp="V_Slider_PreviewMouseUp"/>
+                                        <TextBox x:Name="V_Slider_Value" FontSize="14" Width="60" Margin="9,2,0,1.8"
+                                                  DockPanel.Dock="Right" TextChanged="V_Slider_Value_TextChanged"/>
+                                        <Button x:Name="OK_V"  Content="OK" BorderThickness="1" Click="OK_V_Click" Margin="12,0,0.6,1.8" RenderTransformOrigin="2.215,0.617" Height="21" VerticalContentAlignment="Top" VerticalAlignment="Bottom" Width="35" >
+                                            <Button.Resources>
+                                                <Style TargetType="{x:Type Border}">
+                                                    <Setter Property="CornerRadius" Value="10"/>
+                                                </Style>
+                                            </Button.Resources>
+                                        </Button>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="0" Grid.Row="4" Margin="0,0,0.4,0" VerticalAlignment="Top" Height="25" Grid.RowSpan="2">
+                                        <TextBlock Text="Gray Scale" FontSize="14" Margin="24,8,0,0"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="0" Grid.Row="5" Margin="0,0,0.4,0" VerticalAlignment="Top" Height="25" Grid.RowSpan="2">
+                                        <TextBlock Text="Dilate" FontSize="14" Margin="24,8,0,0"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Grid.Row="4" Margin="0,0,0.4,0" VerticalAlignment="Top" Height="25" Grid.RowSpan="2">
+                                        <CheckBox x:Name="GrayScale_CheckBox" Content="" FontSize="14" Margin="0,11,0,0" Unchecked="GrayScale_CheckBox_Unchecked" Checked="GrayScale_CheckBox_Checked"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Grid.Row="5" Margin="0,0,0.4,0" VerticalAlignment="Top" Height="25" Grid.RowSpan="2">
+                                        <CheckBox x:Name="Dilate_Checkbox" Content="" FontSize="14" Margin="0,11,0,0"/>
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </Expander>
+                        <Expander Header="Threshold" FontSize="14" IsExpanded="True" Background="#FFEEEEF2">
+                            <StackPanel Background="WhiteSmoke" Height="62" Margin="0,0,-0.2,0">
+                                <Grid   Height="62" Margin="0,0,0.4,0" >
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="25"/>
+                                        <RowDefinition Height="25"/>
+                                        <RowDefinition Height="25"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition MaxWidth="200"/>
+                                        <ColumnDefinition/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" Grid.Row="0" VerticalAlignment="Top" Height="25" Grid.RowSpan="2">
+                                        <TextBlock Text="Enable" FontSize="14" Margin="24,8,0,0"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Grid.Row="0" Margin="0,0,0.4,0" VerticalAlignment="Top" Height="25" Grid.RowSpan="2">
+                                        <CheckBox x:Name="Ena_Threshold" Content="" FontSize="14" Margin="0,11,0,0" Checked="Ena_Threshold_Checked" Unchecked="Ena_Threshold_Unchecked"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="0" Grid.Row="1" Margin="0,0,0.4,0" VerticalAlignment="Top" Height="25" Grid.RowSpan="2">
+                                        <TextBlock Text="Thresholding" FontSize="14" Margin="24,8,0,0"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Grid.Row="1" Margin="0,1,0.4,0" Height="25" VerticalAlignment="Top" Orientation="Horizontal">
+                                        <Slider x:Name="Thresh_Slider" BorderBrush="{x:Null}" Foreground="#FFFCFCFC" Background="White" Width="200" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="0" ValueChanged="Thresh_Slider_ValueChanged" SmallChange="1" Maximum="255" PreviewMouseUp="Thresh_Slider_PreviewMouseUp"/>
+                                        <TextBox x:Name="Thresh_Value" FontSize="14" Width="60" Margin="9,3,0,0.8" TextChanged="Thresh_Value_TextChanged"
+                                                  DockPanel.Dock="Right"/>
+                                        <Button x:Name="OK_Thresh" Content="OK" BorderThickness="1" Click="OK_Thresh_Click" Margin="12,3,0,0.8" RenderTransformOrigin="2.215,0.617" Height="21" VerticalContentAlignment="Top" VerticalAlignment="Bottom" Width="35" >
+                                            <Button.Resources>
+                                                <Style TargetType="{x:Type Border}">
+                                                    <Setter Property="CornerRadius" Value="10"/>
+                                                </Style>
+                                            </Button.Resources>
+                                        </Button>
+                                    </StackPanel>
+
+                                </Grid>
+                            </StackPanel>
+                        </Expander>
+                        <Expander Header="Sensitivty" FontSize="14" IsExpanded="True" Background="#FFFFFDFD">
+                            <StackPanel Background="WhiteSmoke" Height="90" Margin="0,0,-0.2,0">
+                                <Grid   Height="62" Margin="0,0,0.4,0" >
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="25"/>
+                                        <RowDefinition Height="25"/>
+                                        <RowDefinition Height="25"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition MaxWidth="200"/>
+                                        <ColumnDefinition/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" Grid.Row="0" VerticalAlignment="Top" Height="25" Grid.RowSpan="2">
+                                        <TextBlock Text="Enable" FontSize="14" Margin="24,8,0,0"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Grid.Row="0" Margin="0,0,0.4,0" VerticalAlignment="Top" Height="25" Grid.RowSpan="2">
+                                        <CheckBox x:Name="EnableSensitivty" Content="" FontSize="14" Margin="0,11,0,0"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="0" Grid.Row="1" Margin="0,0,0.4,0" VerticalAlignment="Top" Height="25" Grid.RowSpan="2">
+                                        <TextBlock Text="Local Distance" FontSize="14" Margin="24,8,0,0"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Grid.Row="1" Margin="0,1,0.4,0" Height="25" VerticalAlignment="Top" Orientation="Horizontal">
+                                        <Slider x:Name="Sens_Slider" BorderBrush="{x:Null}" Foreground="#FFFCFCFC" Background="White" Width="200" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="0"  ValueChanged="Sens_Slider_ValueChanged" PreviewMouseUp="Sens_Slider_PreviewMouseUp"/>
+                                        <TextBox x:Name="Sens_Value" FontSize="14" Width="60" Margin="9,3,0,0.8" TextChanged="Sens_Value_TextChanged"
+                                                  DockPanel.Dock="Right"/>
+                                        <Button x:Name="OK_Dis"  Content="OK" BorderThickness="1" Click="OK_Sens_Click" Margin="12,3,0,0.8" RenderTransformOrigin="2.215,0.617" Height="21" VerticalContentAlignment="Top" VerticalAlignment="Bottom" Width="35" >
+                                            <Button.Resources>
+                                                <Style TargetType="{x:Type Border}">
+                                                    <Setter Property="CornerRadius" Value="10"/>
+                                                </Style>
+                                            </Button.Resources>
+                                        </Button>
+                                    </StackPanel>
+
+                                </Grid>
+                            </StackPanel>
+                        </Expander>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Canvas>
+
+        <StackPanel HorizontalAlignment="Left" Height="38" Margin="2,32,0,0" VerticalAlignment="Top" Width="328" Orientation="Horizontal">
+            <Button x:Name="OpenfileBtn"  HorizontalAlignment="Left" Background="{x:Null}" BorderBrush="{x:Null}" VerticalAlignment="Top" Width="41" Height="37" Click="OpenfileBtn_Click" ToolTip="Open an image">
+                <TextBlock TextWrapping="Wrap" Width="51" RenderTransformOrigin="0.5,0.5">
+                    <TextBlock.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform/>
+                            <SkewTransform/>
+                            <RotateTransform Angle="-0.079"/>
+                            <TranslateTransform/>
+                        </TransformGroup>
+                    </TextBlock.RenderTransform><InlineUIContainer>
+                    <Image Height="27" Width="30" Source="Image\icons8-add-file-96.png" RenderTransformOrigin="3.492,1.311"/>
+                </InlineUIContainer></TextBlock>
+            </Button>
+            <Button x:Name="SaveBtn"  HorizontalAlignment="Left" Background="{x:Null}" BorderBrush="{x:Null}" VerticalAlignment="Top" Width="41" Height="37" ToolTip="Save">
+                <TextBlock TextWrapping="Wrap" Width="51" RenderTransformOrigin="0.5,0.5">
+                    <TextBlock.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform/>
+                            <SkewTransform/>
+                            <RotateTransform Angle="-0.079"/>
+                            <TranslateTransform/>
+                        </TransformGroup>
+                    </TextBlock.RenderTransform><InlineUIContainer>
+                    <Image Height="27" Width="30" Source="Image/icons8-save-90.png" RenderTransformOrigin="3.492,1.311"/>
+                </InlineUIContainer></TextBlock>
+            </Button>
+            <Button x:Name="Camera_BTn"  HorizontalAlignment="Left" Background="{x:Null}" BorderBrush="{x:Null}" VerticalAlignment="Top" Width="41" Height="37" ToolTip="Turn on Camera" >
+                <TextBlock TextWrapping="Wrap" Width="51" RenderTransformOrigin="0.5,0.5">
+                    <TextBlock.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform/>
+                            <SkewTransform/>
+                            <RotateTransform Angle="-0.079"/>
+                            <TranslateTransform/>
+                        </TransformGroup>
+                    </TextBlock.RenderTransform><InlineUIContainer>
+                        <Image Height="27" Width="30" Source="Image/icons8-camera-90.png" RenderTransformOrigin="3.492,1.311"/>
+                    </InlineUIContainer></TextBlock>
+            </Button>
+            <Button x:Name="Back"  HorizontalAlignment="Left" Background="{x:Null}" BorderBrush="{x:Null}" VerticalAlignment="Top" Width="41" Height="37" ToolTip="Undo" Click="Back_Click">
+                <TextBlock TextWrapping="Wrap" Width="51" RenderTransformOrigin="0.5,0.5">
+                    <TextBlock.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform/>
+                            <SkewTransform/>
+                            <RotateTransform Angle="-0.079"/>
+                            <TranslateTransform/>
+                        </TransformGroup>
+                    </TextBlock.RenderTransform><InlineUIContainer>
+                    <Image Height="27" Width="30" Source="Image/icons8-undo-52.png" RenderTransformOrigin="3.492,1.311"/>
+                </InlineUIContainer></TextBlock>
+            </Button>
+            <Button x:Name="Next"  HorizontalAlignment="Left" Background="{x:Null}" BorderBrush="{x:Null}" VerticalAlignment="Top" Width="41" Height="37" ToolTip="Redo" Click="Next_Click">
+                <TextBlock TextWrapping="Wrap" Width="51" RenderTransformOrigin="0.5,0.5">
+                    <TextBlock.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform/>
+                            <SkewTransform/>
+                            <RotateTransform Angle="-0.079"/>
+                            <TranslateTransform/>
+                        </TransformGroup>
+                    </TextBlock.RenderTransform><InlineUIContainer>
+                    <Image Height="27" Width="30" Source="Image/icons8-next-52.png" RenderTransformOrigin="3.492,1.311"/>
+                </InlineUIContainer></TextBlock>
+            </Button>
+            <Button x:Name="UndoBtn_Copy1"  HorizontalAlignment="Left" Background="{x:Null}" BorderBrush="{x:Null}" Width="41" Margin="0,0,0,1.4" ToolTip="Export as PDF">
+                <TextBlock TextWrapping="Wrap" Width="51" RenderTransformOrigin="0.5,0.5">
+                    <TextBlock.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform/>
+                            <SkewTransform/>
+                            <RotateTransform Angle="-0.079"/>
+                            <TranslateTransform/>
+                        </TransformGroup>
+                    </TextBlock.RenderTransform><InlineUIContainer>
+                        <Image Height="27" Width="30" Source="Image/icons8-pdf-96.png" RenderTransformOrigin="3.492,1.311"/>
+                    </InlineUIContainer></TextBlock>
+            </Button>
+            <Button x:Name="UndoBtn_Copy2"  HorizontalAlignment="Left" Background="{x:Null}" BorderBrush="{x:Null}" Width="41" Margin="0,0,0,1.4" ToolTip="Export as Excel">
+                <TextBlock TextWrapping="Wrap" Width="51" RenderTransformOrigin="0.5,0.5">
+                    <TextBlock.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform/>
+                            <SkewTransform/>
+                            <RotateTransform Angle="-0.079"/>
+                            <TranslateTransform/>
+                        </TransformGroup>
+                    </TextBlock.RenderTransform><InlineUIContainer>
+                        <Image Height="27" Width="30" Source="Image/icons8-xls-96.png" RenderTransformOrigin="3.492,1.311"/>
+                    </InlineUIContainer></TextBlock>
+            </Button>
+            <Button x:Name="SaveBtn_Copy1"  HorizontalAlignment="Left" Background="{x:Null}" BorderBrush="{x:Null}" VerticalAlignment="Top" Width="41" Height="37" ToolTip="Add Section">
+                <TextBlock TextWrapping="Wrap" Width="51" RenderTransformOrigin="0.5,0.5">
+                    <TextBlock.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform/>
+                            <SkewTransform/>
+                            <RotateTransform Angle="-0.079"/>
+                            <TranslateTransform/>
+                        </TransformGroup>
+                    </TextBlock.RenderTransform><InlineUIContainer>
+                        <Image Height="27" Width="30" Source="Image/download (1).png" RenderTransformOrigin="3.492,1.311"/>
+                    </InlineUIContainer></TextBlock>
+            </Button>
+        </StackPanel>
+        <Canvas x:Name="ButtonFile_canvas" HorizontalAlignment="Left" Height="90" Margin="0,32,0,0" VerticalAlignment="Top" Width="100" Background="White">
+            <Canvas.Effect>
+                <DropShadowEffect Color="Gray" Opacity="0.3"/>
+            </Canvas.Effect>
+            <Button x:Name="OpenFileButton1" Content="Open File" Width="100" Height="22" Click="OpenFileButton1_Click" Background="{x:Null}" BorderBrush="{x:Null}"/>
+            <Button x:Name="SaveBtn2" Content="Save" Width="100" Height="22" Click="OpenFileButton1_Click" Background="{x:Null}" BorderBrush="{x:Null}" Canvas.Top="22" />
+            <Button x:Name="SaveAsBtn" Content="Save as" Width="100" Height="22" Click="OpenFileButton1_Click" Background="{x:Null}" BorderBrush="{x:Null}" Canvas.Top="44
+                    " />
+            <Button x:Name="ExportBtn" Content="Export" Width="100" Height="22" Click="OpenFileButton1_Click" Background="{x:Null}" BorderBrush="{x:Null}" Canvas.Top="65" />
+        </Canvas>
+        <StackPanel Height="38" Margin="746,32,0,0" VerticalAlignment="Top" Width="250" Orientation="Horizontal" HorizontalAlignment="Left">
+
+            <Button x:Name="zoom_in" Canvas.Left="525" Canvas.Top="334" Background="{x:Null}" BorderBrush="{x:Null}"  Click="Zoom_in_Click" ToolTip="Zoom in" Margin="0,0,0,0.4" Width="45">
+                <TextBlock TextWrapping="Wrap" Width="51" RenderTransformOrigin="0.5,0.5">
+                    <TextBlock.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform/>
+                            <SkewTransform/>
+                            <RotateTransform Angle="-0.079"/>
+                            <TranslateTransform/>
+                        </TransformGroup>
+                    </TextBlock.RenderTransform><InlineUIContainer>
+                    <Image Height="43" Width="34" Source="Image/zoom-in-black.png" RenderTransformOrigin="3.492,1.311"/>
+                </InlineUIContainer></TextBlock>
+            </Button>
+            <Button x:Name="zoom_out" Canvas.Left="525" Canvas.Top="384" Background="{x:Null}" BorderBrush="{x:Null}"  Click="Zoom_out_Click" ToolTip="Zoom out" Margin="0,0,0,0.4" Width="45">
+                <TextBlock TextWrapping="Wrap" Width="51" RenderTransformOrigin="0.5,0.5">
+                    <TextBlock.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform/>
+                            <SkewTransform/>
+                            <RotateTransform Angle="-0.079"/>
+                            <TranslateTransform/>
+                        </TransformGroup>
+                    </TextBlock.RenderTransform><InlineUIContainer>
+                    <Image Height="43" Width="33" Source="Image/zoom-out-black.png" RenderTransformOrigin="3.492,1.311"/>
+                </InlineUIContainer></TextBlock>
+            </Button>
+        </StackPanel>
+        <TextBlock x:Name="Camera_Check_TBlock" HorizontalAlignment="Left" Margin="10,733,0,0" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" Height="23" Width="172"/>
+        <TextBlock x:Name="teets" HorizontalAlignment="Left" Margin="752,697,0,0" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" Height="26" Width="176"/>
 
 
     </Grid>
