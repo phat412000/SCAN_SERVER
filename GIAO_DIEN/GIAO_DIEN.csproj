@@ -101,7 +101,6 @@
     </ApplicationDefinition>
     <Compile Include="SocketHandler.cs" />
     <Compile Include="Converter.cs" />
-    <Compile Include="SocketHandlerResult.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

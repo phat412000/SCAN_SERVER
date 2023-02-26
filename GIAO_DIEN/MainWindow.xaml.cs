@@ -99,6 +99,22 @@ namespace GIAO_DIEN
             socketHandler = new SocketHandler();
             socketHandler.Connect();
 
+            //QuickTest();
+        }
+
+        private void QuickTest()
+        {
+            const string fileName = "C:\\Users\\admin\\Desktop\\do_an_scan\\Image file\\real_5.png";
+
+            BitmapImage bitmap = new BitmapImage();
+            SourceImg = Cv2.ImRead(fileName);
+            bitmap.BeginInit();
+            bitmap.UriSource = new Uri(fileName);
+            bitmap.EndInit();
+
+            ImgScreen.Source = bitmap;
+
+            SendImageCommand();
         }
 
 
@@ -142,9 +158,7 @@ namespace GIAO_DIEN
             openFileDialog.RestoreDirectory = true;
             openFileDialog.Title = "Select Image";
             openFileDialog.Filter = "Image files (*.png;*.jpeg;*jpg;*bmp)|*.png;*.jpeg;*jpg;*bmp|All files (*.*)|*.*";
-            openFileDialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
             openFileDialog.FilterIndex = 1;
-            openFileDialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
             if (openFileDialog.ShowDialog() == false)
             { MessageBox.Show("fail to show"); }
             if (openFileDialog.FileName != "")
@@ -240,7 +254,6 @@ namespace GIAO_DIEN
             OpenFileDialog openFileDialog = new OpenFileDialog();
             openFileDialog.Title = "Select Image";
             openFileDialog.Filter = "Image files (*.png;*.jpeg;*jpg;*bmp)|*.png;*.jpeg;*jpg;*bmp|All files (*.*)|*.*";
-            openFileDialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
             openFileDialog.FilterIndex = 1;
             //openFileDialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
             if (openFileDialog.ShowDialog() == false)
@@ -698,17 +711,23 @@ namespace GIAO_DIEN
 
         }
 
-//--------------------------------------------------------------------------------------------------------------------------------------
-        private async void SendCropImgBtn_Click(object sender, RoutedEventArgs e)
+
+        private async void SendImageCommand()
         {
             var byteImage = Converter.ImageSourceToBytes(ImgScreen.Source);
 
             var matImage = await socketHandler.SendImgCmd(byteImage);
 
-            matImage.ImWrite("abc.jpg");
+            var bitmapImage = Converter.MatToBitmapImage(matImage);
+            ImgScreen.Source = bitmapImage;
+        }
+//--------------------------------------------------------------------------------------------------------------------------------------
+        private void SendCropImgBtn_Click(object sender, RoutedEventArgs e)
+        {
+            SendImageCommand();
             //ImgScreen.Source = Converter.MatToBitmapImage(matImage);
-            
-          //  canvas_on_imgscreen.children.add(converted);
+
+            //  canvas_on_imgscreen.children.add(converted);
         }
 
         ///******************************************** COUNT *****************************************************************
@@ -754,6 +773,7 @@ namespace GIAO_DIEN
                     Cv2.BitwiseAnd(SourceImg, blackMask, ImgAfterAddMask);
                     var converted = Convert(BitmapConverter.ToBitmap(ImgAfterAddMask));
                     ImgScreen.Source = converted;
+                    
 
                     var currentWorkingDirectory = "C://Users//admin//Desktop//do_an_scan//GIAO_DIEN_UPDATE_FIX//GIAO_DIEN//WorkingImg" + "\\" + this.generateFilename() + "_Imgcropped";
                     Console.WriteLine(currentWorkingDirectory);
@@ -1285,12 +1305,60 @@ namespace GIAO_DIEN
 
         }
 
-//-------------------------------------------------------------------------------------------------------------------------------------- 
+        //-------------------------------------------------------------------------------------------------------------------------------------- 
 
 
-        private void Thresh_Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        
+        private ImageSource backupSource = null;
+
+        private async void Thresh_Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            Thresh_Value.Text = Thresh_Slider.Value.ToString();
+            if (backupSource == null)
+            {
+                backupSource = ImgScreen.Source.Clone();
+            }
+
+            var threshSlideValueString = Thresh_Slider.Value.ToString();
+
+            double TextBoxThreshValue = double.Parse(threshSlideValueString);
+            TextBoxThreshValue = Math.Round(TextBoxThreshValue);
+
+            Console.WriteLine(threshSlideValueString);
+
+            try
+            {
+                var taskMatImage = socketHandler.SendValueThreshSliderCmd(backupSource, TextBoxThreshValue.ToString());
+
+                await taskMatImage.ContinueWith((matImageTask) =>
+                {
+                    var matImage = matImageTask.Result;
+
+                    Console.WriteLine("continue with result");
+
+                    if (matImage == null)
+                    {
+                        return;
+                    }
+
+                    var bitmapImage = Converter.MatToBitmapImage(matImage);
+
+
+                    this.Dispatcher.Invoke(() => ImgScreen.Source = bitmapImage);
+                });
+
+                taskMatImage.Start();
+
+            }
+            catch
+            {
+
+            }
+           
+
+            
+
+          
+
         }   
 
         private void Sens_Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)

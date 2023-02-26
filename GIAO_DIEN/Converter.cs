@@ -35,11 +35,9 @@ namespace GIAO_DIEN
             
         }
 
-        public static Mat bytesToMat(byte[] buffer, int lenght)
+        public static Mat bytesToMat(byte[] buffer)
         {
-            byte[] bufferTrimmmed = buffer.Take(lenght).ToArray();
-       
-            Mat mat = Cv2.ImDecode(bufferTrimmmed, ImreadModes.Color);
+            Mat mat = Cv2.ImDecode(buffer, ImreadModes.Color);
             return mat; 
         }
         public static byte[] ImageSourceToBytes(ImageSource source)

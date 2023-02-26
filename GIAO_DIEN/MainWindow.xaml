@@ -258,7 +258,7 @@
                                 </Grid>
                             </StackPanel>
                         </Expander>
-                        <Expander Header="Adjustments" FontSize="14" IsExpanded="True" Height="192" >
+                        <Expander Header="Adjustments" FontSize="14" IsExpanded="True" Height="203" >
                             <StackPanel Background="WhiteSmoke" Height="250" Margin="0,0,-0.2,0">
                                 <Grid Height="242" Margin="0,0,0.4,0" >
                                     <Grid.RowDefinitions>
