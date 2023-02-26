@@ -1539,9 +1539,11 @@ namespace GIAO_DIEN
             return image;
         }
 
-        PixelDataConverter converter = new PixelDataConverter();
+        
         private Mat convertToMat(IGrabResult rtnGrabResult)
         {
+            PixelDataConverter converter = new PixelDataConverter();
+
             IImage image = rtnGrabResult;
             converter.OutputPixelFormat = PixelType.BGR8packed;
             byte[] buffer = new byte[converter.GetBufferSizeForConversion(rtnGrabResult)];
