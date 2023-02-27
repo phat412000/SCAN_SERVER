@@ -6,6 +6,8 @@ import numpy as np
 import websockets
 import asyncio
 
+import functools
+
 
 ScanObject= ScanClass()
 # img = ScanObject.LoadImage(r"C:\Users\admin\Desktop\do_an_scan\Image file\real_5.png")
@@ -22,6 +24,7 @@ ScanObject= ScanClass()
 # cv2.waitKey(0)
 
 clients = set()  #set = *array ma phan tu khong trung nhau 
+
 
 def thresholdImage(image,threshValue):
     roiandgray = ScanObject.RoiAndGray(image)
@@ -47,6 +50,36 @@ def countColonies(image,threshValue, distanceValue):
     total = ScanObject.CountColoni(labelsImg,roiandgray,image)
 
     return total
+
+def decodeImage(bytes):
+    numpyArray = np.frombuffer(bytes, np.uint8) #mang so cua numpy
+    image = cv2.imdecode(numpyArray, cv2.IMREAD_COLOR)
+    return image
+
+def imageToBytes(image):
+    _, img_buf_arr = cv2.imencode(".png", image)
+    imageBufferToArray = img_buf_arr.tobytes()
+
+    return imageBufferToArray
+
+async def producer_handler(websocket, queue):
+
+    while True:
+        message = await websocket.recv()
+        await queue.put(message)
+        await asyncio.sleep(0.1)
+
+
+async def consumer_handler(queue):
+    print(f"consume message object")
+    while True:
+        message = await queue.get()
+        print(f"consume message queue_size={queue.qsize()}")
+        
+
+
+        
+        
 
 async def processData(message, websocket):
 
@@ -115,41 +148,24 @@ async def processData(message, websocket):
 
         return
 
-     
-
-#738054 - 737280 = 774
-#
-                                                                           
-
-
-
 #vua ket noi den server lan dau tien
-async def handler(websocket): 
-    clients.add(websocket) #them nguoi dung vao mang
+async def handler(websocket, path, queue): 
+    # print("handler")
+    asyncio.create_task(producer_handler(websocket, queue))
+    # await producer_handler(websocket, queue)
 
-    print("a client connected")
-
-    #dong thoi cung tao ham lap vo tan de lang nghe du lieu nguoi dung
-    while True:
-        message = await websocket.recv() 
-        print(message)
-
-        await processData(message, websocket)
-        
-        
-        #await websocket.send(processedData)
-
-
-async def looping_forever():
-    while True:
-        await asyncio.sleep(1)
-    
 
 
 async def main():
-    async with websockets.serve(handler, "", 8001, max_size=2**26):
-        await looping_forever()
+    queue = asyncio.Queue()
 
+    asyncio.create_task(consumer_handler(queue))
+    asyncio.create_task(consumer_handler(queue))
 
-if __name__ == "__main__":
-    asyncio.run(main())
+    queued_client_handler = functools.partial(handler, queue=queue)
+
+    async with websockets.serve(queued_client_handler, "", 8001, max_size=2**26):
+        print("start server")
+        await asyncio.Future()
+
+asyncio.run(main())

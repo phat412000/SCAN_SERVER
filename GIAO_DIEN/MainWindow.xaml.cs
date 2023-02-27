@@ -22,6 +22,9 @@ using System.Threading;
 using Basler.Pylon;
 
 using System.Net.WebSockets;
+using Microsoft.Scripting.Runtime;
+using Microsoft.Scripting.Hosting;
+using Python.Runtime;
 
 namespace GIAO_DIEN
 {
@@ -99,28 +102,10 @@ namespace GIAO_DIEN
             socketHandler = new SocketHandler();
             socketHandler.Connect();
 
-            //QuickTest();
+            Thresh_Slider.TickFrequency = 10;
+
+            
         }
-
-        private void QuickTest()
-        {
-            const string fileName = "C:\\Users\\admin\\Desktop\\do_an_scan\\Image file\\real_5.png";
-
-            BitmapImage bitmap = new BitmapImage();
-            SourceImg = Cv2.ImRead(fileName);
-            bitmap.BeginInit();
-            bitmap.UriSource = new Uri(fileName);
-            bitmap.EndInit();
-
-            ImgScreen.Source = bitmap;
-
-            SendImageCommand();
-        }
-
-
-
-       
-
 
 
 
@@ -151,7 +136,7 @@ namespace GIAO_DIEN
             return str;
         }
 
-        private void OpenFileButton1_Click(object sender, RoutedEventArgs e)
+        private async void OpenFileButton1_Click(object sender, RoutedEventArgs e)
         {
 
             OpenFileDialog openFileDialog = new OpenFileDialog();
@@ -189,6 +174,8 @@ namespace GIAO_DIEN
             SolidColorBrush Foreground_color = new SolidColorBrush();
             Foreground_color.Color = Colors.White;
             FileButton.Foreground = Foreground_color;
+
+            
 
         }
 
@@ -249,7 +236,7 @@ namespace GIAO_DIEN
 
         }
 
-        private void OpenfileBtn_Click(object sender, RoutedEventArgs e)
+        private async void OpenfileBtn_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog openFileDialog = new OpenFileDialog();
             openFileDialog.Title = "Select Image";
@@ -284,6 +271,9 @@ namespace GIAO_DIEN
             SolidColorBrush Foreground_color = new SolidColorBrush();
             Foreground_color.Color = Colors.White;
             FileButton.Foreground = Foreground_color;
+            
+            
+
         }
 
         private void AutoBtn_Click(object sender, RoutedEventArgs e)
@@ -1325,39 +1315,8 @@ namespace GIAO_DIEN
 
             Console.WriteLine(threshSlideValueString);
 
-            try
-            {
-                var taskMatImage = socketHandler.SendValueThreshSliderCmd(backupSource, TextBoxThreshValue.ToString());
+            await socketHandler.SendValueThreshSliderCmd(backupSource, threshSlideValueString);
 
-                await taskMatImage.ContinueWith((matImageTask) =>
-                {
-                    var matImage = matImageTask.Result;
-
-                    Console.WriteLine("continue with result");
-
-                    if (matImage == null)
-                    {
-                        return;
-                    }
-
-                    var bitmapImage = Converter.MatToBitmapImage(matImage);
-
-
-                    this.Dispatcher.Invoke(() => ImgScreen.Source = bitmapImage);
-                });
-
-                taskMatImage.Start();
-
-            }
-            catch
-            {
-
-            }
-           
-
-            
-
-          
 
         }   
 
@@ -1495,7 +1454,8 @@ namespace GIAO_DIEN
 
         void CheckCamConnection()
         {
-            while (true)
+            bool isExceptionThrowed = false;
+            while (!isExceptionThrowed)
             {
                 this.Dispatcher.Invoke((Action)(() =>
                 {
@@ -1512,15 +1472,16 @@ namespace GIAO_DIEN
                     {
                         Camera_Check_TBlock.Text = "No camera device is connected.";
                         CameraIsEnabled = false;
-                        try {
-                            if (Runcam.ThreadState == ThreadState.Running)
-                            {
-                                Runcam.Abort();
-                            }
-                        }
-                        catch
-                        {  }
 
+                        isExceptionThrowed = true;
+                    }
+                    finally
+                    {
+                        
+                        if (Runcam != null && Runcam.ThreadState == ThreadState.Running)
+                        {
+                            Runcam.Abort();
+                        }
                     }
                 }));
                 Thread.Sleep(1000);

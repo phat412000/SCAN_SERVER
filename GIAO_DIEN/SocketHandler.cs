@@ -1,5 +1,6 @@
 ﻿using OpenCvSharp;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Net.WebSockets;
 using System.Text;
@@ -25,7 +26,6 @@ namespace GIAO_DIEN
             CancellationTokenSource source = new CancellationTokenSource();
             socket = new ClientWebSocket();
             await socket.ConnectAsync(new Uri("ws://localhost:8001"), CancellationToken.None);
-
         }
 
 
@@ -44,7 +44,7 @@ namespace GIAO_DIEN
         public async Task<byte[]> WaitingForData()
         {
 
-            byte[] buffer = new byte[8192];
+            byte[] buffer = new byte[20000];
             var bufferSegment = new ArraySegment<byte>(buffer);
 
             WebSocketReceiveResult result = null;
@@ -54,7 +54,7 @@ namespace GIAO_DIEN
                 do
                 {
 
-                    result = await socket.ReceiveAsync(bufferSegment, CancellationToken.None);
+                    result = await socket.ReceiveAsync(bufferSegment, CancellationToken.None).ConfigureAwait(false);
                     memoryStream.Write(bufferSegment.Array, bufferSegment.Offset, result.Count);
 
                 }
@@ -122,14 +122,12 @@ namespace GIAO_DIEN
             try
             {
                 var imgbyte = Converter.ImageSourceToBytes(imageSource);
-
                 await SendMessage("cmdthresh_" + threshslidervalue);
                 await SendImage(imgbyte);
 
-                var threshData = await WaitingForData();
-
-                imageThresh = Converter.bytesToMat(threshData);
-
+               
+                //var threshData = await WaitingForData();
+                //imageThresh = Converter.bytesToMat(threshData);
             }
             catch
             {
@@ -140,7 +138,7 @@ namespace GIAO_DIEN
                 mutex.Release();
             }
 
-            return imageThresh;
+            return null;
 
         }
 
