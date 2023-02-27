@@ -28,6 +28,7 @@ using Python.Runtime;
 
 namespace GIAO_DIEN
 {
+
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
@@ -36,6 +37,7 @@ namespace GIAO_DIEN
         int ButtonFile_Click_Mode = 0;
         string SelectImgPath;
         Mat SourceImg;
+        Mat MatThreshold;
         Mat ImgAfterAddMask;
         Mat FinalImg;
         int ZoomInRatio;
@@ -250,6 +252,7 @@ namespace GIAO_DIEN
                 SelectImgPath = openFileDialog.FileName;
                 BitmapImage bitmap = new BitmapImage();
                 SourceImg = Cv2.ImRead(SelectImgPath);
+                
                 bitmap.BeginInit();
                 bitmap.UriSource = new Uri(SelectImgPath);
                 bitmap.EndInit();
@@ -782,7 +785,7 @@ namespace GIAO_DIEN
 
         private void ClearBtn_Click(object sender, RoutedEventArgs e)
         {
-
+            Canvas_On_ImgScreen.Children.Clear();
         }
 //--------------------------------------------------------------------------------------------------------------------------------------
 
@@ -791,6 +794,7 @@ namespace GIAO_DIEN
         bool ColorFilterEnable = false;
         bool GrayScaleEnable = false;
         bool ThreshEnable = false;
+        bool DistanceEnable = false;
         Mat GrayScaleImg;
         Mat HSVImg;
         Mat ThreshImg;
@@ -855,34 +859,13 @@ namespace GIAO_DIEN
             ThreshEnable = true;
             if (ThreshEnable == true)
             {
-                Thresh_Slider.IsEnabled = true;
-                Thresh_Slider.Value = 100;
-                System.Drawing.Bitmap SourceImgBitmap = MatToBitmap(SourceImg);
-                ThreshBitmap = new System.Drawing.Bitmap(SourceImg.Width, SourceImg.Height);
-                for (int x = 0; x < SourceImgBitmap.Width; x++)
-                    for (int y = 0; y < SourceImgBitmap.Height; y++)
-                    {
-                        System.Drawing.Color pixel = SourceImgBitmap.GetPixel(x, y);
-                        byte R = pixel.R;
-                        byte G = pixel.G;
-                        byte B = pixel.B;
-                        double Av = (R + B + G) / 3;
-                        int threshvalue;
-                        threshvalue = 0;
-                        if (Av > threshsold)
-                        {
-                            threshvalue = 255;
-                        }
-                        else
-                        {
-                            threshvalue = 0;
-                        }
-                        ThreshBitmap.SetPixel(x, y, System.Drawing.Color.FromArgb(255, threshvalue, threshvalue, threshvalue));
+                MatThreshold = new Mat();
 
-                    }
-                ThreshImg = BitmapConverter.ToMat(ThreshBitmap);
-                var converted = Convert(BitmapConverter.ToBitmap(ThreshImg));
-                ImgScreen.Source = converted;
+                Thresh_Slider.IsEnabled = true;
+                Cv2.CvtColor(ImgAfterAddMask, MatThreshold, ColorConversionCodes.BGR2GRAY);
+                Cv2.Threshold(MatThreshold, MatThreshold, 10, 255, ThresholdTypes.BinaryInv);
+                var threshImg = Convert(BitmapConverter.ToBitmap(MatThreshold));
+                ImgScreen.Source = threshImg;
             }
         }
 
@@ -892,11 +875,36 @@ namespace GIAO_DIEN
             if (ThreshEnable == false)
             {
                 Thresh_Slider.IsEnabled = false;
-                ThreshImg = SourceImg;
-                var converted = Convert(BitmapConverter.ToBitmap(ThreshImg));
+                var converted = Convert(BitmapConverter.ToBitmap(ImgAfterAddMask));
                 ImgScreen.Source = converted;
             }
         }
+
+        private void Ena_Distance_Checked(object sender, RoutedEventArgs e)
+        {
+
+            DistanceEnable = true;
+            if (DistanceEnable == true)
+            {
+                SendImageCommand();
+            }
+        }
+
+        private void Ena_Distance_Unchecked(object sender, RoutedEventArgs e)
+        {
+            DistanceEnable = true;
+            if (DistanceEnable == true)
+            {
+                MatThreshold = new Mat();
+
+                Sens_Slider.IsEnabled = true;
+                Cv2.CvtColor(ImgAfterAddMask, MatThreshold, ColorConversionCodes.BGR2GRAY);
+                Cv2.Threshold(MatThreshold, MatThreshold, 10, 255, ThresholdTypes.BinaryInv);
+                var threshImg = Convert(BitmapConverter.ToBitmap(MatThreshold));
+                ImgScreen.Source = threshImg;
+            }
+        }
+
 
         //-------------------------------------------------------------------------------------------------------------------------------------- 
         private void PrintBackStack()
@@ -1301,21 +1309,57 @@ namespace GIAO_DIEN
         
         private ImageSource backupSource = null;
 
-        private async void Thresh_Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        private void Thresh_Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            if (backupSource == null)
-            {
-                backupSource = ImgScreen.Source.Clone();
-            }
+            MatThreshold = new Mat();
 
-            var threshSlideValueString = Thresh_Slider.Value.ToString();
+            Thresh_Value.Text = Thresh_Slider.Value.ToString();
+            Cv2.CvtColor(ImgAfterAddMask, MatThreshold, ColorConversionCodes.BGR2GRAY);
+            Cv2.Threshold(MatThreshold, MatThreshold, Thresh_Slider.Value, 255, ThresholdTypes.BinaryInv);
+            var threshImg = Convert(BitmapConverter.ToBitmap(MatThreshold));
+            ImgScreen.Source = threshImg;
 
-            double TextBoxThreshValue = double.Parse(threshSlideValueString);
-            TextBoxThreshValue = Math.Round(TextBoxThreshValue);
 
-            Console.WriteLine(threshSlideValueString);
+            //if (backupSource == null)
+            //{
+            //    backupSource = ImgScreen.Source.Clone();
+            //}
 
-            await socketHandler.SendValueThreshSliderCmd(backupSource, threshSlideValueString);
+            //var threshSlideValueString = Thresh_Slider.Value.ToString();
+
+            //double TextBoxThreshValue = double.Parse(threshSlideValueString);
+            //TextBoxThreshValue = Math.Round(TextBoxThreshValue);
+
+            //Console.WriteLine(threshSlideValueString);
+
+            //try
+            //{
+            //    var taskMatImage = socketHandler.SendValueThreshSliderCmd(backupSource, TextBoxThreshValue.ToString());
+
+            //    await taskMatImage.ContinueWith((matImageTask) =>
+            //    {
+            //        var matImage = matImageTask.Result;
+
+            //        Console.WriteLine("continue with result");
+
+            //        if (matImage == null)
+            //        {
+            //            return;
+            //        }
+
+            //        var bitmapImage = Converter.MatToBitmapImage(matImage);
+
+
+            //        this.Dispatcher.Invoke(() => ImgScreen.Source = bitmapImage);
+            //    });
+
+            //    taskMatImage.Start();
+
+            //}
+            //catch
+            //{
+
+            //}
 
 
         }   
@@ -1457,7 +1501,7 @@ namespace GIAO_DIEN
             bool isExceptionThrowed = false;
             while (!isExceptionThrowed)
             {
-                this.Dispatcher.Invoke((Action)(() =>
+                    this.Dispatcher.Invoke((Action)(() =>
                 {
                     try
                     {
@@ -1500,7 +1544,8 @@ namespace GIAO_DIEN
             return image;
         }
 
-        
+
+        PixelDataConverter converter = new PixelDataConverter();
         private Mat convertToMat(IGrabResult rtnGrabResult)
         {
             PixelDataConverter converter = new PixelDataConverter();

@@ -112,35 +112,37 @@ namespace GIAO_DIEN
         }
 
         
-        public async Task<Mat> SendValueThreshSliderCmd(ImageSource imageSource, string threshslidervalue)
-        {
-            await mutex.WaitAsync();
+        //public async Task<Mat> SendValueThreshSliderCmd(ImageSource imageSource, string threshslidervalue)
+        //{
+        //    await mutex.WaitAsync();
 
-            Console.WriteLine("start sending value thresh");
+        //    Console.WriteLine("start sending value thresh");
 
-            Mat imageThresh = null;
-            try
-            {
-                var imgbyte = Converter.ImageSourceToBytes(imageSource);
-                await SendMessage("cmdthresh_" + threshslidervalue);
-                await SendImage(imgbyte);
+        //    Mat imageThresh = null;
+        //    try
+        //    {
+        //        var imgbyte = Converter.ImageSourceToBytes(imageSource);
 
-               
-                //var threshData = await WaitingForData();
-                //imageThresh = Converter.bytesToMat(threshData);
-            }
-            catch
-            {
+        //        await SendMessage("cmdthresh_" + threshslidervalue);
+        //        await SendImage(imgbyte);
+
+        //        var threshData = await WaitingForData();
+
+        //        imageThresh = Converter.bytesToMat(threshData);
+
+        //    }
+        //    catch
+        //    {
                 
-            }
-            finally
-            {
-                mutex.Release();
-            }
+        //    }
+        //    finally
+        //    {
+        //        mutex.Release();
+        //    }
 
-            return null;
+        //    return imageThresh;
 
-        }
+        //}
 
 
         public async Task<bool> SendMessage(string text )
