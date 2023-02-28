@@ -13,7 +13,6 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.IO;
-using Microsoft.Win32;
 using OpenCvSharp;
 using OpenCvSharp.Extensions;
 using System.Windows.Threading;
@@ -25,6 +24,12 @@ using System.Net.WebSockets;
 using Microsoft.Scripting.Runtime;
 using Microsoft.Scripting.Hosting;
 using Python.Runtime;
+
+using Pythonzxrr;
+using OpenCvSharp.WpfExtensions;
+using System.ComponentModel;
+using Microsoft.Win32;
+using System.Threading.Channels;
 
 namespace GIAO_DIEN
 {
@@ -85,10 +90,8 @@ namespace GIAO_DIEN
         double c;
         //int zoomX = 0;
         //  PixelDataConverter converter = new PixelDataConverter();
-        private DispatcherTimer Timer1;
-        private int time = 0;
 
-        SocketHandler socketHandler;
+        PythonInterface socketHandler;
 
         public MainWindow()
         {
@@ -101,14 +104,11 @@ namespace GIAO_DIEN
 
             //test.Background = imgBrush;
 
-            socketHandler = new SocketHandler();
+            socketHandler = new PythonInterface();
             socketHandler.Connect();
-
-            Thresh_Slider.TickFrequency = 10;
-
             
+            Task.Run(ConsumeContrastValueAsync);           
         }
-
 
 
         private String generateFilename()
@@ -138,7 +138,7 @@ namespace GIAO_DIEN
             return str;
         }
 
-        private async void OpenFileButton1_Click(object sender, RoutedEventArgs e)
+        private void OpenFileButton1_Click(object sender, RoutedEventArgs e)
         {
 
             OpenFileDialog openFileDialog = new OpenFileDialog();
@@ -238,7 +238,7 @@ namespace GIAO_DIEN
 
         }
 
-        private async void OpenfileBtn_Click(object sender, RoutedEventArgs e)
+        private void OpenfileBtn_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog openFileDialog = new OpenFileDialog();
             openFileDialog.Title = "Select Image";
@@ -705,19 +705,11 @@ namespace GIAO_DIEN
         }
 
 
-        private async void SendImageCommand()
-        {
-            var byteImage = Converter.ImageSourceToBytes(ImgScreen.Source);
-
-            var matImage = await socketHandler.SendImgCmd(byteImage);
-
-            var bitmapImage = Converter.MatToBitmapImage(matImage);
-            ImgScreen.Source = bitmapImage;
-        }
 //--------------------------------------------------------------------------------------------------------------------------------------
         private void SendCropImgBtn_Click(object sender, RoutedEventArgs e)
         {
-            SendImageCommand();
+            //SendImageCommand();
+            socketHandler.SendCommand("thresh");
             //ImgScreen.Source = Converter.MatToBitmapImage(matImage);
 
             //  canvas_on_imgscreen.children.add(converted);
@@ -725,7 +717,7 @@ namespace GIAO_DIEN
 
         ///******************************************** COUNT *****************************************************************
         //////
-        private async void CountBtn_Click(object sender, RoutedEventArgs e)
+        private void CountBtn_Click(object sender, RoutedEventArgs e)
         {
             var countData = "10"; // "10"
 
@@ -886,7 +878,7 @@ namespace GIAO_DIEN
             DistanceEnable = true;
             if (DistanceEnable == true)
             {
-                SendImageCommand();
+                //SendImageCommand();
             }
         }
 
@@ -1304,63 +1296,49 @@ namespace GIAO_DIEN
         }
 
         //-------------------------------------------------------------------------------------------------------------------------------------- 
-
-
-        
-        private ImageSource backupSource = null;
-
-        private void Thresh_Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        private readonly Channel<string> _contrastValue = Channel.CreateBounded<string>(new BoundedChannelOptions(2)
         {
-            MatThreshold = new Mat();
+            FullMode = BoundedChannelFullMode.DropOldest
+        });
 
-            Thresh_Value.Text = Thresh_Slider.Value.ToString();
-            Cv2.CvtColor(ImgAfterAddMask, MatThreshold, ColorConversionCodes.BGR2GRAY);
-            Cv2.Threshold(MatThreshold, MatThreshold, Thresh_Slider.Value, 255, ThresholdTypes.BinaryInv);
-            var threshImg = Convert(BitmapConverter.ToBitmap(MatThreshold));
-            ImgScreen.Source = threshImg;
+        // You'll need to start this consumer somewhere and observe it (via await) to ensure you see exceptions
 
+ 
+        private async Task ConsumeContrastValueAsync()
+        {
+            var reader = _contrastValue.Reader;
+            while (await reader.WaitToReadAsync(CancellationToken.None))
+                try
+                {
+                    while (reader.TryRead(out var value))
+                    {
+                        Console.WriteLine("call from consumer: " + value);
 
-            //if (backupSource == null)
-            //{
-            //    backupSource = ImgScreen.Source.Clone();
-            //}
+                        var roundValue = Math.Round(double.Parse(value));
 
-            //var threshSlideValueString = Thresh_Slider.Value.ToString();
+                        Mat image = socketHandler.SendCommand($@"thresh$$${roundValue}$$${SelectImgPath}");
+                        var bitmapSource = image.ToBitmapSource();
+                        bitmapSource.Freeze();
 
-            //double TextBoxThreshValue = double.Parse(threshSlideValueString);
-            //TextBoxThreshValue = Math.Round(TextBoxThreshValue);
+                        ImgScreen.Dispatcher.Invoke(new Action(() => {
+                            ImgScreen.Source = null;
+                            ImgScreen.Source = bitmapSource;
+                        }));
 
-            //Console.WriteLine(threshSlideValueString);
+                    }
+                }
+                catch(Exception e)
+                {
+                    Console.WriteLine("what is wrong?! " + e.Message);
+                }
+                
+        }
 
-            //try
-            //{
-            //    var taskMatImage = socketHandler.SendValueThreshSliderCmd(backupSource, TextBoxThreshValue.ToString());
+        private async void Thresh_Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            await _contrastValue.Writer.WriteAsync(e.NewValue.ToString(), CancellationToken.None);
 
-            //    await taskMatImage.ContinueWith((matImageTask) =>
-            //    {
-            //        var matImage = matImageTask.Result;
-
-            //        Console.WriteLine("continue with result");
-
-            //        if (matImage == null)
-            //        {
-            //            return;
-            //        }
-
-            //        var bitmapImage = Converter.MatToBitmapImage(matImage);
-
-
-            //        this.Dispatcher.Invoke(() => ImgScreen.Source = bitmapImage);
-            //    });
-
-            //    taskMatImage.Start();
-
-            //}
-            //catch
-            //{
-
-            //}
-
+          
 
         }   
 
@@ -1545,7 +1523,7 @@ namespace GIAO_DIEN
         }
 
 
-        PixelDataConverter converter = new PixelDataConverter();
+        
         private Mat convertToMat(IGrabResult rtnGrabResult)
         {
             PixelDataConverter converter = new PixelDataConverter();
@@ -1556,49 +1534,6 @@ namespace GIAO_DIEN
             converter.Convert(buffer, rtnGrabResult);
             return new Mat(rtnGrabResult.Height, rtnGrabResult.Width, MatType.CV_8UC3, buffer);
         }
-        /*[System.Runtime.InteropServices.DllImport("gdi32.dll")]
-        public static extern bool DeleteObject(IntPtr hObject);
-        public static System.Windows.Media.Imaging.BitmapSource Convert(System.Drawing.Bitmap source)
-        {
-            var hBitmap = source.GetHbitmap();
-            var result = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(hBitmap, IntPtr.Zero, System.Windows.Int32Rect.Empty, System.Windows.Media.Imaging.BitmapSizeOptions.FromEmptyOptions());
-            DeleteObject(hBitmap);
-            return result;
-
-        }*/
-        /*public static BitmapSource Convert(System.Drawing.Bitmap bitmap)
-        {
-            var bitmapData = bitmap.LockBits(
-                new System.Drawing.Rectangle(0, 0, bitmap.Width, bitmap.Height),
-                System.Drawing.Imaging.ImageLockMode.ReadOnly, bitmap.PixelFormat);
-
-            var bitmapSource = BitmapSource.Create(
-                bitmapData.Height, bitmapData.Width,
-                bitmap.HorizontalResolution, bitmap.VerticalResolution,
-                PixelFormats.Bgr24, null,
-                bitmapData.Scan0, bitmapData.Stride * bitmapData.Height, bitmapData.Stride);
-
-            bitmap.UnlockBits(bitmapData);
-
-            return bitmapSource;
-        }*/
-        /*[System.Runtime.InteropServices.DllImport("gdi32.dll")]
-        public static extern bool DeleteObject(IntPtr hObject);
-        public static System.Windows.Media.Imaging.BitmapSource Convert( System.Drawing.Bitmap source)
-        {
-            var hBitmap = source.GetHbitmap();
-            var result = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(hBitmap, IntPtr.Zero, System.Windows.Int32Rect.Empty, System.Windows.Media.Imaging.BitmapSizeOptions.FromEmptyOptions());
-
-            DeleteObject(hBitmap);
-
-            return result;
-        }*/
-        /*public ImageSource Convert(System.Drawing.Bitmap yourBitmap)
-        {
-            ImageSourceConverter c = new ImageSourceConverter();
-            return (ImageSource)c.ConvertFrom(yourBitmap);
-
-        }*/ 
         public static System.Drawing.Bitmap MatToBitmap(Mat image)
         {
             return OpenCvSharp.Extensions.BitmapConverter.ToBitmap(image);
