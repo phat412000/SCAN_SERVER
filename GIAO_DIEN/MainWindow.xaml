@@ -427,7 +427,7 @@
         </Canvas>
 
         <StackPanel HorizontalAlignment="Left" Height="38" Margin="2,32,0,0" VerticalAlignment="Top" Width="328" Orientation="Horizontal">
-            <Button x:Name="OpenfileBtn"  HorizontalAlignment="Left" Background="{x:Null}" BorderBrush="{x:Null}" VerticalAlignment="Top" Width="41" Height="37" Click="OpenfileBtn_Click" ToolTip="Open an image">
+            <Button x:Name="OpenfileBtn"  HorizontalAlignment="Left" Background="{x:Null}" BorderBrush="{x:Null}" VerticalAlignment="Top" Width="41" Height="37" Click="MenuFileOpenBtn_Click" ToolTip="Open an image">
                 <TextBlock TextWrapping="Wrap" Width="51" RenderTransformOrigin="0.5,0.5">
                     <TextBlock.RenderTransform>
                         <TransformGroup>
@@ -536,11 +536,11 @@
             <Canvas.Effect>
                 <DropShadowEffect Color="Gray" Opacity="0.3"/>
             </Canvas.Effect>
-            <Button x:Name="OpenFileButton1" Content="Open File" Width="100" Height="22" Click="OpenFileButton1_Click" Background="{x:Null}" BorderBrush="{x:Null}"/>
-            <Button x:Name="SaveBtn2" Content="Save" Width="100" Height="22" Click="OpenFileButton1_Click" Background="{x:Null}" BorderBrush="{x:Null}" Canvas.Top="22" />
-            <Button x:Name="SaveAsBtn" Content="Save as" Width="100" Height="22" Click="OpenFileButton1_Click" Background="{x:Null}" BorderBrush="{x:Null}" Canvas.Top="44
+            <Button x:Name="OpenFileButton1" Content="Open File" Width="100" Height="22" Click="OpenFileButton_Click" Background="{x:Null}" BorderBrush="{x:Null}"/>
+            <Button x:Name="SaveBtn2" Content="Save" Width="100" Height="22" Click="OpenFileButton_Click" Background="{x:Null}" BorderBrush="{x:Null}" Canvas.Top="22" />
+            <Button x:Name="SaveAsBtn" Content="Save as" Width="100" Height="22" Click="OpenFileButton_Click" Background="{x:Null}" BorderBrush="{x:Null}" Canvas.Top="44
                     " />
-            <Button x:Name="ExportBtn" Content="Export" Width="100" Height="22" Click="OpenFileButton1_Click" Background="{x:Null}" BorderBrush="{x:Null}" Canvas.Top="65" />
+            <Button x:Name="ExportBtn" Content="Export" Width="100" Height="22" Click="OpenFileButton_Click" Background="{x:Null}" BorderBrush="{x:Null}" Canvas.Top="65" />
         </Canvas>
         <StackPanel Height="38" Margin="746,32,0,0" VerticalAlignment="Top" Width="250" Orientation="Horizontal" HorizontalAlignment="Left">
 

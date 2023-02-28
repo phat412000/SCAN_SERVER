@@ -91,7 +91,8 @@ namespace GIAO_DIEN
         //int zoomX = 0;
         //  PixelDataConverter converter = new PixelDataConverter();
 
-        PythonInterface socketHandler;
+        PythonInterface pythonInterface;
+        string currentImagePath;
 
         public MainWindow()
         {
@@ -104,8 +105,8 @@ namespace GIAO_DIEN
 
             //test.Background = imgBrush;
 
-            socketHandler = new PythonInterface();
-            socketHandler.Connect();
+            pythonInterface = new PythonInterface();
+            pythonInterface.Connect();
             
             Task.Run(ConsumeContrastValueAsync);           
         }
@@ -138,49 +139,7 @@ namespace GIAO_DIEN
             return str;
         }
 
-        private void OpenFileButton1_Click(object sender, RoutedEventArgs e)
-        {
-
-            OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.RestoreDirectory = true;
-            openFileDialog.Title = "Select Image";
-            openFileDialog.Filter = "Image files (*.png;*.jpeg;*jpg;*bmp)|*.png;*.jpeg;*jpg;*bmp|All files (*.*)|*.*";
-            openFileDialog.FilterIndex = 1;
-            if (openFileDialog.ShowDialog() == false)
-            { MessageBox.Show("fail to show"); }
-            if (openFileDialog.FileName != "")
-            {
-                SelectImgPath = openFileDialog.FileName;
-                BitmapImage bitmap = new BitmapImage();
-                SourceImg = Cv2.ImRead(SelectImgPath);
-                bitmap.BeginInit();
-                bitmap.UriSource = new Uri(SelectImgPath);
-                bitmap.EndInit();
-                ImgScreen.Width = SourceImg.Width/6.5;
-                ImgScreen.Height = SourceImg.Height/6.5;
-                Total_Count_Value.Text = SourceImg.Width.ToString() + ", " + SourceImg.Height.ToString();
-                //ImgScreen_Canvas.Width = bitmap.Width;
-                //ImgScreen_Canvas.Height = bitmap.Height;
-                Canvas_On_ImgScreen.Width = SourceImg.Width/6.5;
-                Canvas_On_ImgScreen.Height = SourceImg.Height/6.5;
-                //ImgScroll.Width = bitmap.Width / 2;
-                //ImgScroll.Height = bitmap.Height / 2;
-                ImgScreen.Source = bitmap;
-                //ImagePathTxt.Content = SelectImgPath;
-                //img = bitmap;
-                //img1 = BitmapImage2Bitmap(img);
-            }
-            ButtonFile_canvas.Visibility = Visibility.Hidden;
-            ButtonFile_Click_Mode = 0;
-            FileButton.Background = null;
-            SolidColorBrush Foreground_color = new SolidColorBrush();
-            Foreground_color.Color = Colors.White;
-            FileButton.Foreground = Foreground_color;
-
-            
-
-        }
-
+        
         private void FileButton_Click(object sender, RoutedEventArgs e)
         {
             ButtonFile_Click_Mode += 1;
@@ -238,7 +197,8 @@ namespace GIAO_DIEN
 
         }
 
-        private void OpenfileBtn_Click(object sender, RoutedEventArgs e)
+
+        private void OpenFile()
         {
             OpenFileDialog openFileDialog = new OpenFileDialog();
             openFileDialog.Title = "Select Image";
@@ -252,15 +212,15 @@ namespace GIAO_DIEN
                 SelectImgPath = openFileDialog.FileName;
                 BitmapImage bitmap = new BitmapImage();
                 SourceImg = Cv2.ImRead(SelectImgPath);
-                
+
                 bitmap.BeginInit();
                 bitmap.UriSource = new Uri(SelectImgPath);
                 bitmap.EndInit();
-                ImgScreen.Width = SourceImg.Width/6.5;
-                ImgScreen.Height = SourceImg.Height/6.5;
-                Canvas_On_ImgScreen.Width = SourceImg.Width/6.5;
-                Canvas_On_ImgScreen.Height = SourceImg.Height/6.5;
-                
+                ImgScreen.Width = SourceImg.Width / 6.5;
+                ImgScreen.Height = SourceImg.Height / 6.5;
+                Canvas_On_ImgScreen.Width = SourceImg.Width / 6.5;
+                Canvas_On_ImgScreen.Height = SourceImg.Height / 6.5;
+
                 ImgScreen.Source = bitmap;
                 centerCircleX = SourceImg.Width / 2;
                 centerCircleY = SourceImg.Height / 2;
@@ -274,9 +234,16 @@ namespace GIAO_DIEN
             SolidColorBrush Foreground_color = new SolidColorBrush();
             Foreground_color.Color = Colors.White;
             FileButton.Foreground = Foreground_color;
-            
-            
 
+            currentImagePath = SelectImgPath;
+        }
+        private void OpenFileButton_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFile();
+        }
+        private void MenuFileOpenBtn_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFile();
         }
 
         private void AutoBtn_Click(object sender, RoutedEventArgs e)
@@ -709,7 +676,7 @@ namespace GIAO_DIEN
         private void SendCropImgBtn_Click(object sender, RoutedEventArgs e)
         {
             //SendImageCommand();
-            socketHandler.SendCommand("thresh");
+            pythonInterface.SendCommand("thresh");
             //ImgScreen.Source = Converter.MatToBitmapImage(matImage);
 
             //  canvas_on_imgscreen.children.add(converted);
@@ -760,9 +727,12 @@ namespace GIAO_DIEN
                     ImgScreen.Source = converted;
                     
 
-                    var currentWorkingDirectory = "C://Users//admin//Desktop//do_an_scan//GIAO_DIEN_UPDATE_FIX//GIAO_DIEN//WorkingImg" + "\\" + this.generateFilename() + "_Imgcropped";
-                    Console.WriteLine(currentWorkingDirectory);
-                    ImgAfterAddMask.SaveImage(currentWorkingDirectory + ".jpg");
+                    var saveFileName =  "imgcropped.jpg";
+                    Console.WriteLine(saveFileName);
+                    ImgAfterAddMask.SaveImage(saveFileName);
+
+                    currentImagePath = Directory.GetCurrentDirectory() + "\\" + saveFileName;
+
                 }
             }
             if (RectangleCheck == true)
@@ -1296,7 +1266,7 @@ namespace GIAO_DIEN
         }
 
         //-------------------------------------------------------------------------------------------------------------------------------------- 
-        private readonly Channel<string> _contrastValue = Channel.CreateBounded<string>(new BoundedChannelOptions(2)
+        private readonly Channel<string> channelValues = Channel.CreateBounded<string>(new BoundedChannelOptions(2)
         {
             FullMode = BoundedChannelFullMode.DropOldest
         });
@@ -1306,7 +1276,8 @@ namespace GIAO_DIEN
  
         private async Task ConsumeContrastValueAsync()
         {
-            var reader = _contrastValue.Reader;
+            var reader = channelValues.Reader;
+
             while (await reader.WaitToReadAsync(CancellationToken.None))
                 try
                 {
@@ -1314,9 +1285,10 @@ namespace GIAO_DIEN
                     {
                         Console.WriteLine("call from consumer: " + value);
 
-                        var roundValue = Math.Round(double.Parse(value));
+                        var thresholdRoundValue = Math.Round(double.Parse(value));
 
-                        Mat image = socketHandler.SendCommand($@"thresh$$${roundValue}$$${SelectImgPath}");
+                        Mat image = pythonInterface.SendCommand("thresh", thresholdRoundValue.ToString(), currentImagePath);
+
                         var bitmapSource = image.ToBitmapSource();
                         bitmapSource.Freeze();
 
@@ -1336,10 +1308,7 @@ namespace GIAO_DIEN
 
         private async void Thresh_Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            await _contrastValue.Writer.WriteAsync(e.NewValue.ToString(), CancellationToken.None);
-
-          
-
+            await channelValues.Writer.WriteAsync(e.NewValue.ToString(), CancellationToken.None);
         }   
 
         private void Sens_Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)

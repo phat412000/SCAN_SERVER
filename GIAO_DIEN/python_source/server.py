@@ -7,6 +7,8 @@ import os
 import websockets
 import asyncio
 
+import re
+
 import win32file, win32pipe
 
 ScanObject = ScanClass()
@@ -37,23 +39,27 @@ def main():
 
     while True:
         left, data = win32file.ReadFile(fileHandle, 4096)
-        stringFromServer = data.decode("utf-8") 
 
+        stringFromServer = data.decode(encoding='utf-8', errors='ignore')
+        dataString = re.search('\$START\$(.*)\$END\$', stringFromServer).group(1)
+
+        print(dataString)
+
+        commandArray = dataString.split("$$$")
         
+        #[thresh, 40, duong_dan]
+        if commandArray[0] == "thresh":
 
-        splitData = stringFromServer.split("$$$")
+            image = cv2.imread(commandArray[2])
+            threshValue =  int(commandArray[1])
+            thresh = thresholdImage(image, threshValue)
 
-        print(splitData)
+            cv2.imwrite('output.jpg', thresh)
 
-        image = cv2.imread(splitData[2])
-        thresh = thresholdImage(image, int(splitData[1]))
-        cv2.imwrite('output.jpg', thresh)
-
-        print(stringFromServer)
-
-        outputImage = os.getcwd() + "\\output.jpg"
-
-        win32file.WriteFile(fileHandle,bytes(outputImage + "END","UTF-8"),None)
+            #current working directory D:\\aadsd\output.jpg
+            outputImageUrl = "$START$" + os.getcwd() + "\\output.jpg" + "$END$"
+            
+            win32file.WriteFile(fileHandle,bytes(outputImageUrl,"UTF-8"),None)
 
         
 

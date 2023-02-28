@@ -50,20 +50,41 @@ namespace Pythonzxrr
             }
             while (!pipeServerStream.IsMessageComplete);
 
+            //bytes => chuoi
+
             var pythonMessage = messageBuilder.ToString();
 
-            var removeStart = pythonMessage.Split(new String[] { "START" }, StringSplitOptions.RemoveEmptyEntries);//start_URL_end
-            var outputData = removeStart[0].Split(new String[] { "END" }, StringSplitOptions.RemoveEmptyEntries)[0];//start_URL_end
+            var removeStart = pythonMessage.Split(new String[] { "$START$" }, StringSplitOptions.RemoveEmptyEntries);//start_URL_end
+            var outputData = removeStart[0].Split(new String[] { "$END$" }, StringSplitOptions.RemoveEmptyEntries)[0];//start_URL_end
 
             return outputData;   
         }
 
-        public Mat SendCommand(string command, Mat image = null)
+        //command, duong dan anh
+        //command, parameter1, parameter2
+
+        //SendCommand("a") => a
+        //SendCommand("a","b","C") => [a,b,c]
+        //SendCommand("a","b","C",.....) => [a,b,c,....]
+        //duong__dan, thong_so_thresh, thong_so_distance
+        //$START$duong_dan$$$thong_so_thresh$$$thong_so_distance
+
+        public Mat SendCommand(params string[] commands)
         {
             using (var stream = new MemoryStream())
             using (var writer = new BinaryWriter(stream))
             {
-                writer.Write(command);
+
+                string commandToSend = "$START$";
+                
+                foreach(string command in commands)
+                {
+                    commandToSend += command + "$$$";
+                }
+
+                commandToSend = commandToSend.Substring(0, commandToSend.Length - 3) + "$END$";
+
+                writer.Write(commandToSend);
                 pipeServerStream.Write(stream.ToArray(), 0, stream.ToArray().Length);
             }
 
