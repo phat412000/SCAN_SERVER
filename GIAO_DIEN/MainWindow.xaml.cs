@@ -87,12 +87,13 @@ namespace GIAO_DIEN
         bool tamH = true;
         bool tamS = true;
         bool tamV = true;
-        double c;
+       
         //int zoomX = 0;
         //  PixelDataConverter converter = new PixelDataConverter();
 
         PythonInterface pythonInterface;
         string currentImagePath;
+        string currentImageThreshPath;
 
         public MainWindow()
         {
@@ -108,7 +109,7 @@ namespace GIAO_DIEN
             pythonInterface = new PythonInterface();
             pythonInterface.Connect();
             
-            Task.Run(ConsumeContrastValueAsync);           
+            Task.Run(SliderValueConsumerAsync);           
         }
 
 
@@ -1274,28 +1275,43 @@ namespace GIAO_DIEN
         // You'll need to start this consumer somewhere and observe it (via await) to ensure you see exceptions
 
  
-        private async Task ConsumeContrastValueAsync()
+
+        private void CommandCallbackEventDispatch(string command, Mat image)
+        {
+            if (command.Contains("thresh"))
+            {
+                image.SaveImage(AppConstraint.THRESH_OUTPUT_IMAGE);
+            }
+        }
+
+        private async Task SliderValueConsumerAsync()
         {
             var reader = channelValues.Reader;
+   
 
             while (await reader.WaitToReadAsync(CancellationToken.None))
                 try
                 {
-                    while (reader.TryRead(out var value))
+                    while (reader.TryRead(out var command))
                     {
-                        Console.WriteLine("call from consumer: " + value);
+                        Console.WriteLine("call from consumer: " + command);
 
-                        var thresholdRoundValue = Math.Round(double.Parse(value));
+                        Mat image = pythonInterface.SendCommand(command);
 
-                        Mat image = pythonInterface.SendCommand("thresh", thresholdRoundValue.ToString(), currentImagePath);
+                        CommandCallbackEventDispatch(command, image);
 
-                        var bitmapSource = image.ToBitmapSource();
-                        bitmapSource.Freeze();
 
-                        ImgScreen.Dispatcher.Invoke(new Action(() => {
-                            ImgScreen.Source = null;
-                            ImgScreen.Source = bitmapSource;
-                        }));
+                        if (image != null)
+                        {
+                            var bitmapSource = image.ToBitmapSource();
+                            bitmapSource.Freeze();
+
+                            ImgScreen.Dispatcher.Invoke(new Action(() => {
+                                ImgScreen.Source = null;
+                                ImgScreen.Source = bitmapSource;
+                            }));
+                        }
+
 
                     }
                 }
@@ -1308,12 +1324,21 @@ namespace GIAO_DIEN
 
         private async void Thresh_Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            await channelValues.Writer.WriteAsync(e.NewValue.ToString(), CancellationToken.None);
+            var thresholdRoundValue = Math.Round(e.NewValue);
+
+            var command = PythonInterface.BuildCommand("thresh", thresholdRoundValue.ToString(), currentImagePath);
+            await channelValues.Writer.WriteAsync(command, CancellationToken.None);
         }   
 
-        private void Sens_Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        private async void Sens_Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            Sens_Value.Text = Sens_Slider.Value.ToString();
+            var thresholdRoundValue = Math.Round(Thresh_Slider.Value).ToString();
+            var distanceRoundValue = Math.Round(e.NewValue).ToString();
+            var threashImage = AppConstraint.getAbsolutePath(AppConstraint.THRESH_OUTPUT_IMAGE);
+
+            var command = PythonInterface.BuildCommand("distance", distanceRoundValue, thresholdRoundValue, currentImagePath);
+            await channelValues.Writer.WriteAsync(command, CancellationToken.None);
+
         }
 
         private void H_Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)

@@ -5,16 +5,11 @@ import numpy as np
 from skimage.feature import peak_local_max
 from skimage.segmentation import watershed
 from scipy import ndimage
-from collections import Counter
-import matplotlib.pyplot as plt
 import sys
-from PIL import Image, ImageDraw
-
-from sklearn.cluster import KMeans
-import websockets
 
 
-np.set_printoptions(threshold = sys.maxsize)
+
+#np.set_printoptions(threshold = sys.maxsize)
 
 class ScanClass:        
 

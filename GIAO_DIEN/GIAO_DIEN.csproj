@@ -142,6 +142,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="AppConstraint.cs" />
     <Compile Include="PythonInterfaces\PythonInterface.cs" />
     <Compile Include="Converter.cs" />
     <Page Include="MainWindow.xaml">

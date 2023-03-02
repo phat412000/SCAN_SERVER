@@ -69,33 +69,41 @@ namespace Pythonzxrr
         //duong__dan, thong_so_thresh, thong_so_distance
         //$START$duong_dan$$$thong_so_thresh$$$thong_so_distance
 
-        public Mat SendCommand(params string[] commands)
+        public Mat SendCommand(string command)
         {
             using (var stream = new MemoryStream())
             using (var writer = new BinaryWriter(stream))
             {
-
-                string commandToSend = "$START$";
-                
-                foreach(string command in commands)
-                {
-                    commandToSend += command + "$$$";
-                }
-
-                commandToSend = commandToSend.Substring(0, commandToSend.Length - 3) + "$END$";
-
-                writer.Write(commandToSend);
+                writer.Write(command);
                 pipeServerStream.Write(stream.ToArray(), 0, stream.ToArray().Length);
             }
 
             var pythonMessage = readingMessageFromPython();
+
+            if (pythonMessage == "NO_IMAGE")
+            {
+                return null;
+            }
 
             Mat imageReturn = Cv2.ImRead(pythonMessage);
 
             return imageReturn;
         }
 
+        public static string BuildCommand(params string[] commands)
+        {
+            string commandToSend = "$START$";
 
+            foreach (string command in commands)
+            {
+                commandToSend += command + "$$$";
+            }
+            //$START$abc$$$def$END$
+
+            commandToSend = commandToSend.Substring(0, commandToSend.Length - 3) + "$END$";
+
+            return commandToSend;
+        }
 
         public void Connect()
         {
