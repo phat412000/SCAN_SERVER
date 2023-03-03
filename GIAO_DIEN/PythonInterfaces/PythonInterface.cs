@@ -59,7 +59,6 @@ namespace Pythonzxrr
 
             return outputData;   
         }
-
         //command, duong dan anh
         //command, parameter1, parameter2
 
@@ -68,6 +67,7 @@ namespace Pythonzxrr
         //SendCommand("a","b","C",.....) => [a,b,c,....]
         //duong__dan, thong_so_thresh, thong_so_distance
         //$START$duong_dan$$$thong_so_thresh$$$thong_so_distance
+
 
         public Mat SendCommand(string command)
         {
@@ -89,6 +89,24 @@ namespace Pythonzxrr
 
             return imageReturn;
         }
+        public string SendTotalCommand(string command)
+        {
+            using (var stream = new MemoryStream())
+            using (var writer = new BinaryWriter(stream))
+            {
+                writer.Write(command);
+                pipeServerStream.Write(stream.ToArray(), 0, stream.ToArray().Length);
+            }
+
+
+            var pythonMessagetotal = readingMessageFromPython();
+
+            Console.WriteLine(pythonMessagetotal);
+            return pythonMessagetotal;
+            
+
+        }
+
 
         public static string BuildCommand(params string[] commands)
         {

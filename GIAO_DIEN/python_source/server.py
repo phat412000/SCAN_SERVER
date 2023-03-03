@@ -90,7 +90,7 @@ def main():
             imageThresh = thresholdImage(ImgCropresize, threshValue)           
             labelsImg = distanceImage(imageThresh, distanceValue)
             roiandgray = ScanObject.RoiAndGray(ImgCropresize)
-            outputImg,_,_ = ScanObject.CountColoni(labelsImg,roiandgray,ImgCropresize)
+            outputImg,bacteriaCenters,total = ScanObject.CountColoni(labelsImg,roiandgray,ImgCropresize)
 
             cv2.imwrite("outputDistance.jpg",outputImg)
 
@@ -99,5 +99,10 @@ def main():
             outputImageDistanceUrl =  "$START$" + os.getcwd() + "\\outputDistance.jpg" + "$END$"
 
             win32file.WriteFile(fileHandle,bytes(outputImageDistanceUrl, "UTF-8"),None)
+
+
+        elif commandArray[0] == "count":
+            outputTotal = "$START$" + total + "$END$"
+            win32file.WriteFile(fileHandle, bytes(outputTotal,"UTF-8"), None)
 
 main()
