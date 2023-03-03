@@ -56,6 +56,7 @@ namespace GIAO_DIEN
             // m.Visibility = Visibility.Hidden;
 
             this.Visibility = Visibility.Hidden;
+            Console.WriteLine("aab");
         }
 
        
