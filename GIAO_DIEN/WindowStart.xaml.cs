@@ -187,7 +187,7 @@ namespace GIAO_DIEN
             ImgScreen.RenderTransform = mtf;
             Canvas_On_ImgScreen.RenderTransform = mtf;
         }
-
+        
         private void Zoom_out_Click(object sender, RoutedEventArgs e)
         {
             ZoomOutRatio += 1;
