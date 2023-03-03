@@ -56,6 +56,8 @@ namespace GIAO_DIEN
                 label1.IsEnabled = true;
                 ComboBoxCOM.IsEnabled = true;
 
+                Console.WriteLine("Hello");
+
             }
             else
             {
