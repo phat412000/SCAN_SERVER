@@ -730,13 +730,23 @@ namespace GIAO_DIEN
             Total_Count_Value.Text = total;
 
         }
+        ///********************  BIến bacteriaCenters chứa list center position của Bacterias ***************************************************************************************
+        ///
+        private async void EditBtn_Click(object sender, RoutedEventArgs e)
+        {
+            var command = PythonInterface.BuildCommand("centers");
+            await channelValues.Writer.WriteAsync(command, CancellationToken.None);
+            string bacteriaCenters = pythonInterface.SendBacteriaCentersCommand(command);
+
+
+        }
 
         ///***********************************************************************************************************
         ///
 
         private void ConfirmBtn_Click(object sender, RoutedEventArgs e)
         {
-            ImgAfterAddMask = new Mat();
+            ImgAfterAddMask = new Mat();    
             if (circleCheck == true)
             {
                 if (ZoomInRatio > 0)
@@ -1568,6 +1578,8 @@ namespace GIAO_DIEN
             }
 
         }
+
+
         public BitmapImage Convert(System.Drawing.Bitmap src)
         {
             MemoryStream ms = new MemoryStream();

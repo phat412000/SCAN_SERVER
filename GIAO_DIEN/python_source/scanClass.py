@@ -100,12 +100,12 @@ class ScanClass:
 
             countBacteria += 1
 
-            bacteriaObject = { "bacteria id: ":  countBacteria, " size ": currentContourSize, " position ": centerOfBacteria}
+            #bacteriaObject = { "bacteria id: ":  countBacteria, " size ": currentContourSize, " position ": centerOfBacteria}
             showed = ("bacteria id: " + str(countBacteria) + " size: " + str(currentContourSize) + " position: " + str(centerOfBacteria) )
-            bacteriaColonies.append(bacteriaObject)
+            bacteriaColonies.append(centerOfBacteria)
             
             finalmage = cv2.putText(roi,str(countBacteria), centerOfBacteria, cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0,0,255), 1)
             ContoursColonies = cv2.drawContours(finalmage,[biggestContourInAzone], -1, (255,0,0), 1)
 
-        return finalmage, showed, countBacteria    
+        return finalmage, bacteriaCenters, countBacteria    
     

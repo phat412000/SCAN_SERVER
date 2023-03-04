@@ -91,18 +91,25 @@ def main():
             labelsImg = distanceImage(imageThresh, distanceValue)
             roiandgray = ScanObject.RoiAndGray(ImgCropresize)
             outputImg,bacteriaCenters,total = ScanObject.CountColoni(labelsImg,roiandgray,ImgCropresize)
-
+            print("bacteria", bacteriaCenters)
             cv2.imwrite("outputDistance.jpg",outputImg)
-
             print("finish written image")
 
             outputImageDistanceUrl =  "$START$" + os.getcwd() + "\\outputDistance.jpg" + "$END$"
-
+            #{  }
             win32file.WriteFile(fileHandle,bytes(outputImageDistanceUrl, "UTF-8"),None)
 
 
         elif commandArray[0] == "count":
-            outputTotal = "$START$" + total + "$END$"
+            outputTotal = "$START$" + str(total) + "$END$"
             win32file.WriteFile(fileHandle, bytes(outputTotal,"UTF-8"), None)
+
+            ##Python mac dinh, json python
+
+        elif commandArray[0] == "centers":
+            print(bacteriaCenters)
+            outputCenter = "$START$" + str(bacteriaCenters) + "$END$"
+        
+            win32file.WriteFile(fileHandle, bytes(outputCenter,"UTF-8"),None)
 
 main()
