@@ -42,9 +42,7 @@ namespace GIAO_DIEN
         int ButtonFile_Click_Mode = 0;
         string SelectImgPath;
         Mat SourceImg;
-        Mat MatThreshold;
         Mat ImgAfterAddMask;
-        Mat FinalImg;
         int ZoomInRatio;
         int ZoomOutRatio;
         bool AutoMode = false;
@@ -87,6 +85,8 @@ namespace GIAO_DIEN
         bool tamH = true;
         bool tamS = true;
         bool tamV = true;
+        bool DistanceEnable = false;
+        bool ThreshEnable = false;
 
         //int zoomX = 0;
         //  PixelDataConverter converter = new PixelDataConverter();
@@ -94,7 +94,6 @@ namespace GIAO_DIEN
         private int time = 0;
         PythonInterface pythonInterface;
         string currentImagePath;
-        string currentImageThreshPath;
 
         public WindowStart()
         {
@@ -121,6 +120,16 @@ namespace GIAO_DIEN
             DateTime_Textbox.Text = _datetime;
             _barcode = barcode;
             BarcodeID.Text = _barcode;
+
+            if (DistanceEnable == false)
+            {
+                Sens_Slider.IsEnabled = false;
+            }
+            if (ThreshEnable == false)
+            {
+                Thresh_Slider.IsEnabled = false;
+            }
+
         }
 
 
@@ -228,7 +237,7 @@ namespace GIAO_DIEN
             }
         }
 
-            private void Button_Click(object sender, RoutedEventArgs e)
+        private void Button_Click(object sender, RoutedEventArgs e)
         {
 
         }
@@ -246,12 +255,14 @@ namespace GIAO_DIEN
             if (openFileDialog.FileName != "")
             {
                 SelectImgPath = openFileDialog.FileName;
-                BitmapImage bitmap = new BitmapImage();
+                
                 SourceImg = Cv2.ImRead(SelectImgPath);
 
+                BitmapImage bitmap = new BitmapImage();
                 bitmap.BeginInit();
                 bitmap.UriSource = new Uri(SelectImgPath);
                 bitmap.EndInit();
+
                 ImgScreen.Width = SourceImg.Width / 6.5;
                 ImgScreen.Height = SourceImg.Height / 6.5;
                 Canvas_On_ImgScreen.Width = SourceImg.Width / 6.5;
@@ -276,6 +287,7 @@ namespace GIAO_DIEN
         private void OpenFileButton_Click(object sender, RoutedEventArgs e)
         {
             OpenFile();
+
         }
         private void MenuFileOpenBtn_Click(object sender, RoutedEventArgs e)
         {
@@ -715,29 +727,31 @@ namespace GIAO_DIEN
         {
             //SendImageCommand();
             pythonInterface.SendCommand("thresh");
-            //ImgScreen.Source = Converter.MatToBitmapImage(matImage);
 
-            //  canvas_on_imgscreen.children.add(converted);
         }
 
         ///******************************************** COUNT *****************************************************************
         //////
-        private async void CountBtn_Click(object sender, RoutedEventArgs e)
+        private void CountBtn_Click(object sender, RoutedEventArgs e)
         {
             var command = PythonInterface.BuildCommand("count");
-            await channelValues.Writer.WriteAsync(command, CancellationToken.None);
-            string total = pythonInterface.SendTotalCommand(command);
+            string total = pythonInterface.SendCommandAndReceiveRawString(command);
             Total_Count_Value.Text = total;
 
         }
-        ///********************  BIến bacteriaCenters chứa list center position của Bacterias ***************************************************************************************
+        ///********************  BIến bacteriaCenters chứa list center position của Bacterias    ***************************************************************************************
         ///
-        private async void EditBtn_Click(object sender, RoutedEventArgs e)
+        private void EditBtn_Click(object sender, RoutedEventArgs e)
         {
             var command = PythonInterface.BuildCommand("centers");
-            await channelValues.Writer.WriteAsync(command, CancellationToken.None);
-            string bacteriaCenters = pythonInterface.SendBacteriaCentersCommand(command);
-
+            string bacteriaCentersString = pythonInterface.SendCommandAndReceiveRawString(command);
+            List<BacteriaCenter> bacteriaCenters = Converter.StringToBacteriaCenters(bacteriaCentersString);
+            
+            //lap qua cai mang bacter
+            //imagesource 
+            //lay toa do chuot tren image source x, y
+            //for b in bacteriaCenters   ===> Distance(b.x, b.y, x, y) 
+           
 
         }
 
@@ -792,25 +806,43 @@ namespace GIAO_DIEN
                 ImgScreen.Source = converted;
             }
         }
-
+//----------------------------------------------------------------------------------------------------------------------------------------
         private void ClearBtn_Click(object sender, RoutedEventArgs e)
         {
             Canvas_On_ImgScreen.Children.Clear();
             ImgScreen.Source = null;
+
+            DistanceEnable = false;
+            ThreshEnable = false;
+            circleCheck = false;
+
+            if (circleCheck == false)
+            {
+                size90mm.IsChecked = false;
+                size100mm.IsChecked = false;
+                size150mm.IsChecked = false;
+            }
+
+            if (DistanceEnable == false)
+            {
+                Sens_Slider.IsEnabled = false;
+            }
+            if (ThreshEnable == false)
+            {
+                Thresh_Slider.IsEnabled = false;
+            }
+
         }
-        //--------------------------------------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------------------------------------
 
         /// <summary>
         /// HSV CONTROL MANUAL, GRAYSCALE, THRESHOLD _______________________________________________________________
         bool ColorFilterEnable = false;
         bool GrayScaleEnable = false;
-        bool ThreshEnable = false;
-        bool DistanceEnable = false;
         Mat GrayScaleImg;
         Mat HSVImg;
-        Mat ThreshImg;
-        double threshsold = 100;
-        System.Drawing.Bitmap ThreshBitmap;
+
+
 
         private void ColorFilter_Enable_Checked(object sender, RoutedEventArgs e)
         {
@@ -865,57 +897,92 @@ namespace GIAO_DIEN
                 ImgScreen.Source = converted;
             }
         }
+
         private void Ena_Threshold_Checked(object sender, RoutedEventArgs e)
         {
             ThreshEnable = true;
             if (ThreshEnable == true)
             {
-                MatThreshold = new Mat();
-
                 Thresh_Slider.IsEnabled = true;
-                Cv2.CvtColor(ImgAfterAddMask, MatThreshold, ColorConversionCodes.BGR2GRAY);
-                Cv2.Threshold(MatThreshold, MatThreshold, 10, 255, ThresholdTypes.BinaryInv);
-                var threshImg = Convert(BitmapConverter.ToBitmap(MatThreshold));
-                ImgScreen.Source = threshImg;
-            }
-        }
+                var thresholdRoundValue = Math.Round(Thresh_Slider.Value);
+                var command = PythonInterface.BuildCommand("thresh", thresholdRoundValue.ToString(), currentImagePath);
+                Mat image = pythonInterface.SendCommand(command);
 
+                CommandCallbackEventDispatch(command, image);
+
+
+                if (image != null)
+                {
+                    var bitmapSource = image.ToBitmapSource();
+
+                    bitmapSource.Freeze();
+
+                    ImgScreen.Dispatcher.Invoke(new Action(() => {
+                        ImgScreen.Source = null;
+                        ImgScreen.Source = bitmapSource;
+                    }));
+                }
+
+
+
+            }
+
+//------------------------------- NOTE: sau khi click Save nho xoa URLimage hien tai -------------------------------------------------
+        }
         private void Ena_Threshold_Unchecked(object sender, RoutedEventArgs e)
         {
             ThreshEnable = false;
             if (ThreshEnable == false)
             {
                 Thresh_Slider.IsEnabled = false;
-                var converted = Convert(BitmapConverter.ToBitmap(ImgAfterAddMask));
-                ImgScreen.Source = converted;
             }
-        }
+            ImgScreen.Source = Convert(BitmapConverter.ToBitmap(ImgAfterAddMask));
 
+          
+
+        }
         private void Ena_Distance_Checked(object sender, RoutedEventArgs e)
         {
-
             DistanceEnable = true;
             if (DistanceEnable == true)
             {
-                //SendImageCommand();
+                Sens_Slider.IsEnabled = true;
+                var distanceRoundValue = Math.Round(Sens_Slider.Value).ToString();
+                var thresholdRoundValue = Math.Round(Thresh_Slider.Value).ToString();
+                var command = PythonInterface.BuildCommand("distance", distanceRoundValue, thresholdRoundValue, currentImagePath);
+                Mat image = pythonInterface.SendCommand(command);
+
+                CommandCallbackEventDispatch(command, image);
+
+
+                if (image != null)
+                {
+                    var bitmapSource = image.ToBitmapSource();
+
+                    bitmapSource.Freeze();
+
+                    ImgScreen.Dispatcher.Invoke(new Action(() => {
+                        ImgScreen.Source = null;
+                        ImgScreen.Source = bitmapSource;
+                    }));
+                }
+
             }
+
+
         }
 
         private void Ena_Distance_Unchecked(object sender, RoutedEventArgs e)
         {
-            DistanceEnable = true;
-            if (DistanceEnable == true)
+            DistanceEnable = false;
+            if (DistanceEnable == false)
             {
-                MatThreshold = new Mat();
-
-                Sens_Slider.IsEnabled = true;
-                Cv2.CvtColor(ImgAfterAddMask, MatThreshold, ColorConversionCodes.BGR2GRAY);
-                Cv2.Threshold(MatThreshold, MatThreshold, 10, 255, ThresholdTypes.BinaryInv);
-                var threshImg = Convert(BitmapConverter.ToBitmap(MatThreshold));
-                ImgScreen.Source = threshImg;
+                Sens_Slider.IsEnabled = false;
             }
+            ImgScreen.Source = Convert(BitmapConverter.ToBitmap(ImgAfterAddMask));
+            
         }
-
+      
 
         //-------------------------------------------------------------------------------------------------------------------------------------- 
         private void PrintBackStack()
@@ -1095,6 +1162,7 @@ namespace GIAO_DIEN
             {
                 backStack.Push(new BACKDATA("thresh", 0));
                 tamThresh = false;
+
             }
 
             backStack.Push(new BACKDATA("thresh", Thresh_Slider.Value));
@@ -1326,12 +1394,22 @@ namespace GIAO_DIEN
 
         private void CommandCallbackEventDispatch(string command, Mat image)
         {
+            if (image == null)
+            {
+                return;
+            }
+            if (command.Contains("distance"))
+            {
+                image.SaveImage(AppConstraint.DISTANCE_OUTPUT_IMAGE);
+            }
             if (command.Contains("thresh"))
             {
                 image.SaveImage(AppConstraint.THRESH_OUTPUT_IMAGE);
             }
+
         }
 
+        
         private async Task SliderValueConsumerAsync()
         {
             var reader = channelValues.Reader;
@@ -1352,6 +1430,7 @@ namespace GIAO_DIEN
                         if (image != null)
                         {
                             var bitmapSource = image.ToBitmapSource();
+                            
                             bitmapSource.Freeze();
 
                             ImgScreen.Dispatcher.Invoke(new Action(() => {
@@ -1369,49 +1448,27 @@ namespace GIAO_DIEN
                 }
 
         }
-        //private async Task TotalValueConsumerAsync()
-        //{
-        //    var reader = channelValues.Reader;
-
-
-        //    while (await reader.WaitToReadAsync(CancellationToken.None))
-        //        try
-        //        {
-        //            while (reader.TryRead(out var command))
-        //            {
-        //                Console.WriteLine("call from consumer: " + command);
-
-        //                string total = pythonInterface.SendTotalCommand(command);
-
-        //                Total_Count_Value.Text = total;
-
-
-        //            }
-        //        }
-        //        catch (Exception e)
-        //        {
-        //            Console.WriteLine("what is wrong?! " + e.Message);
-        //        }
-
-        //}
 
 
         private async void Thresh_Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            var thresholdRoundValue = Math.Round(e.NewValue);
+           var thresholdRoundValue = Math.Round(e.NewValue);
+           var command = PythonInterface.BuildCommand("thresh", thresholdRoundValue.ToString(), currentImagePath);
+           await channelValues.Writer.WriteAsync(command, CancellationToken.None);
 
-            var command = PythonInterface.BuildCommand("thresh", thresholdRoundValue.ToString(), currentImagePath);
-            await channelValues.Writer.WriteAsync(command, CancellationToken.None);
+            Thresh_Value.Text = Thresh_Slider.Value.ToString();
+
         }
 
         private async void Sens_Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             var thresholdRoundValue = Math.Round(Thresh_Slider.Value).ToString();
-            var distanceRoundValue = Math.Round(e.NewValue).ToString();
-            var threashImage = AppConstraint.getAbsolutePath(AppConstraint.THRESH_OUTPUT_IMAGE);
+            var distanceRoundValue = Math.Round(e.NewValue).ToString();          
 
             var command = PythonInterface.BuildCommand("distance", distanceRoundValue, thresholdRoundValue, currentImagePath);
             await channelValues.Writer.WriteAsync(command, CancellationToken.None);
+
+            Sens_Value.Text = Sens_Slider.Value.ToString();
 
         }
 
@@ -1578,6 +1635,7 @@ namespace GIAO_DIEN
             }
 
         }
+
 
 
         public BitmapImage Convert(System.Drawing.Bitmap src)

@@ -57,11 +57,11 @@ def main():
 
         commandArray = dataString.split("$$$")
         
-        #[thresh, 40, duong_dan]
+        #[thresh, 40, url]
         if commandArray[0] == "thresh":
 
             image = cv2.imread(commandArray[2])
-            image = cv2.resize(image, (600, 410))
+            image = cv2.resize(image, (828, 567))
             threshValue =  int(commandArray[1])
             thresh = thresholdImage(image, threshValue)
 
@@ -85,7 +85,7 @@ def main():
             threshValue = int(commandArray[2])
 
             imageCrop = cv2.imread(commandArray[3])
-            ImgCropresize = cv2.resize(imageCrop, (600, 410))
+            ImgCropresize = cv2.resize(imageCrop, (828, 567))
 
             imageThresh = thresholdImage(ImgCropresize, threshValue)           
             labelsImg = distanceImage(imageThresh, distanceValue)
@@ -107,9 +107,19 @@ def main():
             ##Python mac dinh, json python
 
         elif commandArray[0] == "centers":
-            print(bacteriaCenters)
-            outputCenter = "$START$" + str(bacteriaCenters) + "$END$"
-        
+            #$START$290,63,.....$end$
+            outputCenter = "$START$"
+
+            for bacteria in bacteriaCenters:
+                outputCenter += "{},{},".format(bacteria[0], bacteria[1])
+
+            #$START$290,63,340,64
+            outputCenter = outputCenter[:-1]
+
+            outputCenter += "$END$"
+            
+            print("centers", outputCenter)
+
             win32file.WriteFile(fileHandle, bytes(outputCenter,"UTF-8"),None)
 
 main()

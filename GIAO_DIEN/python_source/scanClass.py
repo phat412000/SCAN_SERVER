@@ -12,9 +12,9 @@ import sys
 #np.set_printoptions(threshold = sys.maxsize)
 
 class ScanClass:        
-
+#600 410
     def DetectAndTrimDisk(self,Img ,padding_size):
-        Imgresize = cv2.resize(Img, (600, 410))
+        Imgresize = cv2.resize(Img, (828, 567))
         minRadius     = 0
         maxRadius     = Imgresize.shape[1] #image width
         minDist       = 100

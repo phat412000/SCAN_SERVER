@@ -40,7 +40,7 @@ namespace Pythonzxrr
         {
             StringBuilder messageBuilder = new StringBuilder();
             string messageChunk = string.Empty;
-            byte[] messageBuffer = new byte[20];
+            byte[] messageBuffer = new byte[4098];
             do
             {
                 pipeServerStream.Read(messageBuffer, 0, messageBuffer.Length);
@@ -90,9 +90,8 @@ namespace Pythonzxrr
             return imageReturn;
         }
 
-        public  string SendBacteriaCentersCommand(string command)
+        public string SendCommandAndReceiveRawString(string command)
         {
-
             using (var stream = new MemoryStream())
             using (var writer = new BinaryWriter(stream))
             {
@@ -101,28 +100,10 @@ namespace Pythonzxrr
             }
 
             var pythonMessageCenters = readingMessageFromPython();
-            
+
             Console.WriteLine(pythonMessageCenters);
             return pythonMessageCenters;
         }
-        public string SendTotalCommand(string command)
-        {
-            using (var stream = new MemoryStream())
-            using (var writer = new BinaryWriter(stream))
-            {
-                writer.Write(command);
-                pipeServerStream.Write(stream.ToArray(), 0, stream.ToArray().Length);
-            }
-
-
-            var pythonMessageTotal = readingMessageFromPython();
-
-            Console.WriteLine(pythonMessageTotal);
-            return pythonMessageTotal;
-            
-
-        }
-
 
         public static string BuildCommand(params string[] commands)
         {

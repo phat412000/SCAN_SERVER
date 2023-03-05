@@ -143,6 +143,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="AppConstraint.cs" />
+    <Compile Include="BacteriaCenter.cs" />
     <Compile Include="GloblalV.cs" />
     <Compile Include="PythonInterfaces\PythonInterface.cs" />
     <Compile Include="Converter.cs" />

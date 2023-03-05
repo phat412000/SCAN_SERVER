@@ -13,6 +13,7 @@ namespace GIAO_DIEN
 
         public static string NO_IMAGE = "NO_IMAGE";
 
+        public static string DISTANCE_OUTPUT_IMAGE = "distanceImage.jpg";
         public static string getAbsolutePath(string file)
         {
             return Directory.GetCurrentDirectory() + "\\" + file;

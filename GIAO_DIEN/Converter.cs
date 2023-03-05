@@ -60,6 +60,27 @@ namespace GIAO_DIEN
             return data;
         }
 
+        //mang[object(x, y), object(x1,y1)]
+        public static List<BacteriaCenter> StringToBacteriaCenters(string data)
+        {
+            List<BacteriaCenter> bacteriaCenters = new List<BacteriaCenter>();
+
+            string[] splitedData = data.Split(',');
+
+            //i =0
+            //i = 2
+            //i = 4
+            for(long i =  0; i < splitedData.Length; i+= 2)
+            {
+                int x = int.Parse(splitedData[i]);
+                int y = int.Parse(splitedData[i + 1]);
+
+                var center = new BacteriaCenter(x, y);
+                bacteriaCenters.Add(center);
+            }
+
+            return bacteriaCenters;
+        }
 
     }
 }
