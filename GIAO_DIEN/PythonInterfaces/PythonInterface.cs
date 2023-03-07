@@ -18,9 +18,6 @@ namespace Pythonzxrr
         public string pythonPath { get; private set; }
         public string executablePath { get; private set; }
 
-
-        private Process pythonProcess;
-
         NamedPipeServerStream pipeServerStream;
 
 
@@ -123,6 +120,18 @@ namespace Pythonzxrr
         public void Connect()
         {
             pipeServerStream = new NamedPipeServerStream("process_pipe", PipeDirection.InOut, 1, PipeTransmissionMode.Message);
+
+            var processStart = new ProcessStartInfo();
+
+            processStart.WorkingDirectory = Directory.GetCurrentDirectory();
+            processStart.FileName = "python.exe";
+            processStart.Arguments = "python_source/server.py";
+
+            processStart.UseShellExecute = false; 
+            processStart.CreateNoWindow = true;
+
+            Process.Start(processStart);
+
             pipeServerStream.WaitForConnection();
 
             pipeServerStream.ReadMode = PipeTransmissionMode.Message;

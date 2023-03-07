@@ -78,8 +78,8 @@ namespace GIAO_DIEN
 
         string curLabel;
         double curValue;
-        string a;
-        object b;
+        //string a;
+        //object b;
         bool tamThresh = true;
         bool tamLocal = true;
         bool tamH = true;

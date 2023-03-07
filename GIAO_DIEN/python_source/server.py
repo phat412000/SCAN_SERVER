@@ -5,6 +5,7 @@ import numpy as np
 import os
 import re
 import win32file, win32pipe
+import time
 
 ScanObject = ScanClass()
 
@@ -17,24 +18,17 @@ def thresholdImage(image,threshValue):
     roiandgray = ScanObject.RoiAndGray(image)
     threshImg = ScanObject.ThreshImage(roiandgray,threshValue)
 
-
     return threshImg
 
 def distanceImage(imageThresh, distanceValue):
     labelsImg  =ScanObject.LocalImage(imageThresh,distanceValue)
 
-
     return labelsImg
-
-
 
 def imageToBytes(image):
     _, buffer = cv2.imencode(".jpg", image)    
 
     return buffer.tobytes()
-
-
-
 
 def main():
     fileHandle = win32file.CreateFile(
@@ -79,8 +73,6 @@ def main():
                 win32file.WriteFile(fileHandle,bytes(outputImageDistanceUrl, "UTF-8"),None)
                 continue
 
-         
-
             distanceValue = int(commandArray[1])
             threshValue = int(commandArray[2])
 
@@ -98,7 +90,6 @@ def main():
             outputImageDistanceUrl =  "$START$" + os.getcwd() + "\\outputDistance.jpg" + "$END$"
             #{  }
             win32file.WriteFile(fileHandle,bytes(outputImageDistanceUrl, "UTF-8"),None)
-
 
         elif commandArray[0] == "count":
             outputTotal = "$START$" + str(total) + "$END$"
@@ -122,4 +113,5 @@ def main():
 
             win32file.WriteFile(fileHandle, bytes(outputCenter,"UTF-8"),None)
 
+time.sleep(2)
 main()
