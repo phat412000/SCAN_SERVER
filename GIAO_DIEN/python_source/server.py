@@ -11,9 +11,6 @@ ScanObject = ScanClass()
 
 
 
-
-
-
 def thresholdImage(image,threshValue):
     roiandgray = ScanObject.RoiAndGray(image)
     threshImg = ScanObject.ThreshImage(roiandgray,threshValue)
@@ -113,5 +110,7 @@ def main():
 
             win32file.WriteFile(fileHandle, bytes(outputCenter,"UTF-8"),None)
 
-time.sleep(2)
+time.sleep(0.5)
+
+
 main()
