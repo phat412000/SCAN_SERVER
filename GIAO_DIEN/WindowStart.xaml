@@ -237,7 +237,7 @@
                                         <TextBlock Foreground="Black" FontSize="14" Text="Rectangle" Margin="24,0,0,0"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" Grid.Row="0" Margin="0,7,0.2,0" VerticalAlignment="Top" Height="62">
-                                        <CheckBox x:Name="size90mm" Content="90mm" FontSize="14" Margin="0,0,0.4,0" HorizontalAlignment="Right" Width="414" Checked="Size90mm_Checked"/>
+                                        <CheckBox x:Name="size90mm" Content="90mm" FontSize="14" Margin="0,0,0.4,0" HorizontalAlignment="Right" Width="414" Checked="Size90mm_Checked" Unchecked="size90mm_Unchecked"/>
                                         <CheckBox x:Name="size100mm" Content="100mm" FontSize="14" Margin="0,6,0,0" Checked="Size100mm_Checked"/>
                                         <CheckBox x:Name="size150mm" Content="150mm" FontSize="14" Margin="0,5,0,0" Checked="Size150mm_Checked"/>
                                     </StackPanel>

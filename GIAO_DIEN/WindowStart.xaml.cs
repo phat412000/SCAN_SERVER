@@ -85,6 +85,7 @@ namespace GIAO_DIEN
         bool tamH = true;
         bool tamS = true;
         bool tamV = true;
+        bool tamConfirm = true;
         bool DistanceEnable = false;
         bool ThreshEnable = false;
 
@@ -269,8 +270,6 @@ namespace GIAO_DIEN
                 Canvas_On_ImgScreen.Height = SourceImg.Height / 6.5;
 
                 ImgScreen.Source = bitmap;
-                centerCircleX = SourceImg.Width / 2;
-                centerCircleY = SourceImg.Height / 2;
                 //ImagePathTxt.Content = SelectImgPath;
                 //img = bitmap;
                 //img1 = BitmapImage2Bitmap(img);
@@ -349,55 +348,70 @@ namespace GIAO_DIEN
         private void Size90mm_Checked(object sender, RoutedEventArgs e)
         {
             circleCheck = true;
-            RectangleCheck = false;
-            Heightsize90 = 3180 / 6.5;
-            Widthsize90 = 3180 / 6.5;
-            radiusCircle = 3180;
-            size100mm.IsChecked = false;
-            size150mm.IsChecked = false;
-            size150x300mm.IsChecked = false;
-            size200x300mm.IsChecked = false;
-            centerCircleX = (SourceImg.Width / 2) / 6.5;
-            centerCircleY = SourceImg.Height / 2 / 6.5;
-            Ellipse ACircle = new Ellipse()
+            if (circleCheck == true)
             {
-                Height = Heightsize90,
-                Width = Widthsize90,
-                Stroke = Brushes.LightGreen,
-                StrokeThickness = 3,
-                Fill = Brushes.Transparent
-            };
+                size90mm.IsChecked = true;
+                RectangleCheck = false;
+                Heightsize90 = 3180 / 6.5;
+                Widthsize90 = 3180 / 6.5;
+                radiusCircle = 3180;
+                size100mm.IsChecked = false;
+                size150mm.IsChecked = false;
+                size150x300mm.IsChecked = false;
+                size200x300mm.IsChecked = false;
+                centerCircleX = (SourceImg.Width / 2) / 6.5;
+                centerCircleY = SourceImg.Height / 2 / 6.5;
+                Ellipse ACircle = new Ellipse()
+                {
+                    Height = Heightsize90,
+                    Width = Widthsize90,
+                    Stroke = Brushes.LightGreen,
+                    StrokeThickness = 3,
+                    Fill = Brushes.Transparent
+                };
 
-            double x = (Canvas_On_ImgScreen.ActualWidth / 2) - (ACircle.Width / 2);
-            double y = (Canvas_On_ImgScreen.ActualHeight / 2) - (ACircle.Height / 2);
+                double x = (Canvas_On_ImgScreen.ActualWidth / 2) - (ACircle.Width / 2);
+                double y = (Canvas_On_ImgScreen.ActualHeight / 2) - (ACircle.Height / 2);
 
 
-            Canvas.SetLeft(ACircle, x);
-            Canvas.SetTop(ACircle, y);
-            ACircle.Tag = "C" + (Canvas_On_ImgScreen.Children.Count - 1).ToString();
+                Canvas.SetLeft(ACircle, x);
+                Canvas.SetTop(ACircle, y);
+                ACircle.Tag = "C" + (Canvas_On_ImgScreen.Children.Count - 1).ToString();
 
-            ACircle.PreviewMouseLeftButtonDown += ACircle_PreviewMouseLeftButtonDown;
+                ACircle.PreviewMouseLeftButtonDown += ACircle_PreviewMouseLeftButtonDown;
 
-            Canvas_On_ImgScreen.Children.Clear();
-            Canvas_On_ImgScreen.Children.Add(ACircle);
+                Canvas_On_ImgScreen.Children.Clear();
+                Canvas_On_ImgScreen.Children.Add(ACircle);
 
 
-            cropX = x;
-            cropY = y;
+                cropX = x;
+                cropY = y;
 
-            cropWidth = Heightsize90;
-            cropHeight = Widthsize90;
+                cropWidth = Heightsize90;
+                cropHeight = Widthsize90;
 
-            textBlockSize = new TextBlock();
-            textBlockSize.Text = "D = 90mm";
-            textBlockSize.Foreground = new SolidColorBrush(Colors.LightGreen);
-            textBlockSize.FontSize = 16;
-            textBlockSize.FontWeight = FontWeights.UltraBold;
-            Canvas.SetLeft(textBlockSize, x + 80);
-            Canvas.SetTop(textBlockSize, y - 25);
-            Canvas_On_ImgScreen.Children.Add(textBlockSize);
+                textBlockSize = new TextBlock();
+                textBlockSize.Text = "D = 90mm";
+                textBlockSize.Foreground = new SolidColorBrush(Colors.LightGreen);
+                textBlockSize.FontSize = 16;
+                textBlockSize.FontWeight = FontWeights.UltraBold;
+                Canvas.SetLeft(textBlockSize, x + 80);
+                Canvas.SetTop(textBlockSize, y - 25);
+                Canvas_On_ImgScreen.Children.Add(textBlockSize);
+            }
+            
 
         }
+        private void size90mm_Unchecked(object sender, RoutedEventArgs e)
+        {
+            circleCheck = false;
+            if (circleCheck == false)
+            {
+                size90mm.IsChecked = false;
+                Canvas_On_ImgScreen.Children.Clear();
+            }
+        }
+
 
 
         private void Size100mm_Checked(object sender, RoutedEventArgs e)
@@ -759,7 +773,16 @@ namespace GIAO_DIEN
         ///
 
         private void ConfirmBtn_Click(object sender, RoutedEventArgs e)
-        {
+        {   
+            
+            if (tamConfirm == true)
+            {
+                backStack.Push(new BACKDATA("confirm", 0));
+                tamConfirm = false;
+            }
+            backStack.Push(new BACKDATA("confirm", 999));
+
+            PrintBackStack();
             ImgAfterAddMask = new Mat();    
             if (circleCheck == true)
             {
@@ -788,12 +811,16 @@ namespace GIAO_DIEN
                     var converted = Convert(BitmapConverter.ToBitmap(ImgAfterAddMask));
                     ImgScreen.Source = converted;
 
+                    size90mm.IsChecked = false;
+
 
                     var saveFileName = "imgcropped.jpg";
                     Console.WriteLine(saveFileName);
                     ImgAfterAddMask.SaveImage(saveFileName);
 
                     currentImagePath = Directory.GetCurrentDirectory() + "\\" + saveFileName;
+
+                 
 
                 }
             }
@@ -1034,6 +1061,23 @@ namespace GIAO_DIEN
                         case "v":
                             V_Slider.Value = dataPo.values;
                             break;
+                        case "confirm":
+                            SourceImg = Cv2.ImRead(SelectImgPath);
+
+                            BitmapImage bitmap = new BitmapImage();
+                            bitmap.BeginInit();
+                            bitmap.UriSource = new Uri(SelectImgPath);
+                            bitmap.EndInit();
+
+                            ImgScreen.Width = SourceImg.Width / 6.5;
+                            ImgScreen.Height = SourceImg.Height / 6.5;
+                            Canvas_On_ImgScreen.Width = SourceImg.Width / 6.5;
+                            Canvas_On_ImgScreen.Height = SourceImg.Height / 6.5;
+
+                            ImgScreen.Source = bitmap;
+
+                            Canvas_On_ImgScreen.Children.Clear();
+                            break;
                         default:
                             break;
                     }
@@ -1047,6 +1091,7 @@ namespace GIAO_DIEN
                     tamLocal = true;
                     tamS = true;
                     tamV = true;
+                    tamConfirm = true;
                 }
 
 
@@ -1104,6 +1149,15 @@ namespace GIAO_DIEN
                         case "v":
                             Console.WriteLine("value cur peek");
                             V_Slider.Value = dataPre.values;
+                            popData = nextStack.Pop();
+                            curValue = popData.values;
+                            curLabel = popData.labels;
+                            backStack.Push(popData);
+                            break;
+                        case "confirm":
+                            ImgScreen.Source = Convert(BitmapConverter.ToBitmap(ImgAfterAddMask));
+                            double i = 999;
+                            i = dataPre.values;
                             popData = nextStack.Pop();
                             curValue = popData.values;
                             curLabel = popData.labels;
@@ -1637,7 +1691,6 @@ namespace GIAO_DIEN
             }
 
         }
-
 
 
         public BitmapImage Convert(System.Drawing.Bitmap src)

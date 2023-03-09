@@ -133,7 +133,6 @@ namespace Pythonzxrr
             var process = Process.Start(processStartInfo);
 
             process.StandardInput.WriteLine("python_source\\start_server.cmd");
-            Path.GetExtension("python_source\\start_server.cmd");
             process.StandardInput.Flush();
 
 
