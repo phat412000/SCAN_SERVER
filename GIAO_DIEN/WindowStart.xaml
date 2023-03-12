@@ -15,9 +15,10 @@
 
 
         <ScrollViewer HorizontalAlignment="Left" Height="586" Margin="3,70,0,0" VerticalAlignment="Top" Width="848" HorizontalScrollBarVisibility="Visible">
-            <Canvas x:Name="ImgScreen_Canvas" HorizontalAlignment="Left" Height="964" VerticalAlignment="Top" Width="1248" Background="#FFEEEEF2">
-                <Image x:Name="ImgScreen" Height="567" Width="828" MouseMove="ImgScreen_MouseMove" MouseUp="ImgScreen_MouseUp" MouseDown="ImgScreen_MouseDown"/>
-                <Canvas x:Name="Canvas_On_ImgScreen" Height="567" Width="828" PreviewMouseLeftButtonDown="Canvas_On_ImgScreen_PreviewMouseLeftButtonDown" PreviewMouseLeftButtonUp="Canvas_On_ImgScreen_PreviewMouseLeftButtonUp" PreviewMouseMove="Canvas_On_ImgScreen_PreviewMouseMove" MouseMove="Canvas_On_ImgScreen_MouseMove"/>
+            <Canvas x:Name="ImgScreen_Canvas" HorizontalAlignment="Left" Height="964" VerticalAlignment="Top" Width="1248" Background="#FFEEEEF2" MouseDown="TopCanvas_MouseDown" MouseMove="TopCanvas_MouseMove">
+                <Image x:Name="ImgScreen" Height="567" Width="828"  MouseUp="ImgScreen_MouseUp" />
+                <Canvas x:Name="Canvas_On_ImgScreen" Height="567" Width="828" PreviewMouseLeftButtonDown="Canvas_On_ImgScreen_PreviewMouseLeftButtonDown" PreviewMouseLeftButtonUp="Canvas_On_ImgScreen_PreviewMouseLeftButtonUp" PreviewMouseMove="Canvas_On_ImgScreen_PreviewMouseMove" />
+
 
             </Canvas>
         </ScrollViewer>
@@ -204,6 +205,7 @@
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" Grid.Row="1" Margin="0,1.2,0.4,0" Height="25" VerticalAlignment="Top" Orientation="Horizontal" Grid.RowSpan="2">
                                         <TextBox x:Name="Total_Count_Value" FontSize="14" Width="138" Margin="0,3,0,0.6"/>
+                                        <Button Content="AddSecment" x:Name="AddSecmentBtn" Width="90" HorizontalAlignment="Center" Margin="163,0,163,-0.2" Click="AddSecmentBtn_Click" />
                                     </StackPanel>
                                     <StackPanel Grid.Column="0" Grid.Row="2" Margin="0,0.4,0,0" VerticalAlignment="Top" Height="25">
                                         <TextBlock Text="Edit" FontSize="14" Margin="24,6,0,0"/>
@@ -254,6 +256,7 @@
                                         <Button Content="Send" x:Name="SendCropImgBtn" Width="60" HorizontalAlignment="Left" Margin="0" Click="SendCropImgBtn_Click"  />
                                         <Button Content="Confirm" x:Name="ConfirmBtn" Width="60" HorizontalAlignment="Left" Margin="0,5,0,0" Click="ConfirmBtn_Click"  />
                                         <Button Content="Clear" x:Name="ClearBtn" Width="60" HorizontalAlignment="Left" Margin="0,5,0,0" Click="ClearBtn_Click"  />
+                                        
                                     </StackPanel>
                                 </Grid>
                             </StackPanel>
@@ -489,7 +492,7 @@
                     <Image Height="27" Width="30" Source="Image/icons8-next-52.png" RenderTransformOrigin="3.492,1.311"/>
                 </InlineUIContainer></TextBlock>
             </Button>
-            
+
             <Button x:Name="UndoBtn_Copy2"  HorizontalAlignment="Left" Background="{x:Null}" BorderBrush="{x:Null}" Width="41" Margin="0,0,0,1.4" ToolTip="Export as Excel">
                 <TextBlock TextWrapping="Wrap" Width="51" RenderTransformOrigin="0.5,0.5">
                     <TextBlock.RenderTransform>
@@ -522,7 +525,7 @@
                 <DropShadowEffect Color="Gray" Opacity="0.3"/>
             </Canvas.Effect>
             <Button x:Name="OpenFileButton1" Content="Open File" Width="100" Height="22" Click="OpenFileButton_Click" Background="{x:Null}" BorderBrush="{x:Null}"/>
-            
+
         </Canvas>
         <StackPanel Height="38" Margin="724,33,0,0" VerticalAlignment="Top" Width="132" Orientation="Horizontal" HorizontalAlignment="Left">
 
@@ -567,7 +570,7 @@
             </Button>
         </StackPanel>
         <TextBlock x:Name="Camera_Check_TBlock" HorizontalAlignment="Left" Margin="856,48,0,0" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" Height="23" Width="172"/>
-        <TextBlock x:Name="teets" HorizontalAlignment="Left" Margin="912,628,0,0" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" Height="26" Width="176"/>
+        <TextBlock x:Name="teets" HorizontalAlignment="Left" Margin="1284,359,0,0" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" Height="26" Width="176" RenderTransformOrigin="1.613,-3.938"/>
         <Canvas Name="Detail_Informations"  HorizontalAlignment="Left" Height="154" Margin="2,661,0,0" VerticalAlignment="Top" Width="1487" Background="WhiteSmoke">
             <Canvas HorizontalAlignment="Left" Height="32" VerticalAlignment="Top" Width="1487" Background="#FF007ACC"/>
             <StackPanel Height="32" Width="187" Orientation="Horizontal">

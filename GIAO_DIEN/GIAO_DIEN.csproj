@@ -145,6 +145,7 @@
     <Compile Include="AppConstraint.cs" />
     <Compile Include="BacteriaCenter.cs" />
     <Compile Include="GloblalV.cs" />
+    <Compile Include="PositionMouse.cs" />
     <Compile Include="PythonInterfaces\PythonInterface.cs" />
     <Compile Include="Converter.cs" />
     <Compile Include="UserControl1.xaml.cs">

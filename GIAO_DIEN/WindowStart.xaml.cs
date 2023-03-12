@@ -14,13 +14,12 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.IO;
 using OpenCvSharp;
+
 using OpenCvSharp.Extensions;
 using System.Windows.Threading;
 using Window = System.Windows.Window;
 using System.Threading;
 using Basler.Pylon;
-
-using System.Net.WebSockets;
 using Microsoft.Scripting.Runtime;
 using Microsoft.Scripting.Hosting;
 using Python.Runtime;
@@ -30,6 +29,10 @@ using OpenCvSharp.WpfExtensions;
 using System.ComponentModel;
 using Microsoft.Win32;
 using System.Threading.Channels;
+using Rectangle = System.Windows.Shapes.Rectangle;
+//using System.Drawing;
+using Size = OpenCvSharp.Size;
+using Image = System.Windows.Controls.Image;
 
 namespace GIAO_DIEN
 {
@@ -58,6 +61,7 @@ namespace GIAO_DIEN
 
         Stack<BACKDATA> backStack = new Stack<BACKDATA>();
         Stack<BACKDATA> nextStack = new Stack<BACKDATA>();
+
 
         private double cropX = 0;
         private double cropY = 0;
@@ -88,6 +92,8 @@ namespace GIAO_DIEN
         bool tamConfirm = true;
         bool DistanceEnable = false;
         bool ThreshEnable = false;
+        bool addSecmentEnable = false;
+        bool getPosByClickEnable = false;
 
         //int zoomX = 0;
         //  PixelDataConverter converter = new PixelDataConverter();
@@ -112,6 +118,7 @@ namespace GIAO_DIEN
 
             Task.Run(SliderValueConsumerAsync);
             //Task.Run(TotalValueConsumerAsync);
+
         }
         private string _datetime;
         private string _barcode;
@@ -164,7 +171,7 @@ namespace GIAO_DIEN
 
         private void FileButton_Click(object sender, RoutedEventArgs e)
         {
-            ButtonFile_Click_Mode += 1;
+            ButtonFile_Click_Mode += 1; //really
             if (ButtonFile_Click_Mode == 1)
             {
                 ButtonFile_canvas.Visibility = Visibility.Visible;
@@ -172,7 +179,7 @@ namespace GIAO_DIEN
                 color.Color = Colors.White;
                 FileButton.Background = color;
                 SolidColorBrush Foreground_color = new SolidColorBrush();
-                Foreground_color.Color = Color.FromRgb(3, 102, 169);
+                Foreground_color.Color = System.Windows.Media.Color.FromRgb(3, 102, 169);
                 FileButton.Foreground = Foreground_color;
             }
             if (ButtonFile_Click_Mode == 2)
@@ -197,7 +204,7 @@ namespace GIAO_DIEN
             ImgScreen.RenderTransform = mtf;
             Canvas_On_ImgScreen.RenderTransform = mtf;
         }
-        
+
         private void Zoom_out_Click(object sender, RoutedEventArgs e)
         {
             ZoomOutRatio += 1;
@@ -256,7 +263,7 @@ namespace GIAO_DIEN
             if (openFileDialog.FileName != "")
             {
                 SelectImgPath = openFileDialog.FileName;
-                
+
                 SourceImg = Cv2.ImRead(SelectImgPath);
 
                 BitmapImage bitmap = new BitmapImage();
@@ -282,6 +289,27 @@ namespace GIAO_DIEN
             FileButton.Foreground = Foreground_color;
 
             currentImagePath = SelectImgPath;
+
+            //SolidColorBrush brush = new SolidColorBrush();
+            //brush.Color = Colors.Black;
+
+            //Polyline polyline = new Polyline();
+            //polyline.Stroke = brush;
+            //polyline.StrokeThickness = 1;
+            ////ok thu lai
+
+            //PointCollection polygonPoints = new PointCollection();
+            //polygonPoints.Add(new System.Windows.Point(289.8, 184.4));
+            //polygonPoints.Add(new System.Windows.Point(575.4, 220.4));
+
+            //polyline.Points = polygonPoints;
+
+            //Console.WriteLine("draw?");
+
+
+            //ImgScreen_Canvas.Children.Add(polyline);
+
+
         }
         private void OpenFileButton_Click(object sender, RoutedEventArgs e)
         {
@@ -365,9 +393,9 @@ namespace GIAO_DIEN
                 {
                     Height = Heightsize90,
                     Width = Widthsize90,
-                    Stroke = Brushes.LightGreen,
+                    Stroke = System.Windows.Media.Brushes.LightGreen,
                     StrokeThickness = 3,
-                    Fill = Brushes.Transparent
+                    Fill = System.Windows.Media.Brushes.Transparent
                 };
 
                 double x = (Canvas_On_ImgScreen.ActualWidth / 2) - (ACircle.Width / 2);
@@ -398,8 +426,10 @@ namespace GIAO_DIEN
                 Canvas.SetLeft(textBlockSize, x + 80);
                 Canvas.SetTop(textBlockSize, y - 25);
                 Canvas_On_ImgScreen.Children.Add(textBlockSize);
+
+                Console.WriteLine(Canvas_On_ImgScreen.Width);
             }
-            
+
 
         }
         private void size90mm_Unchecked(object sender, RoutedEventArgs e)
@@ -431,9 +461,9 @@ namespace GIAO_DIEN
             {
                 Height = Heightsize100,
                 Width = Widthsize100,
-                Stroke = Brushes.Green,
+                Stroke = System.Windows.Media.Brushes.Green,
                 StrokeThickness = 3,
-                Fill = Brushes.Transparent
+                Fill = System.Windows.Media.Brushes.Transparent
             };
 
             double x = (Canvas_On_ImgScreen.ActualWidth / 2) - (ACircle.Width / 2);
@@ -481,9 +511,9 @@ namespace GIAO_DIEN
             {
                 Height = Heightsize150,
                 Width = Widthsize150,
-                Stroke = Brushes.Green,
+                Stroke = System.Windows.Media.Brushes.Green,
                 StrokeThickness = 3,
-                Fill = Brushes.Transparent
+                Fill = System.Windows.Media.Brushes.Transparent
             };
 
             double x = (Canvas_On_ImgScreen.ActualWidth / 2) - (ACircle.Width / 2);
@@ -537,7 +567,7 @@ namespace GIAO_DIEN
             H = 150;
             W = 300;
 
-            Rectangle ARectangle = new Rectangle() { Height = 150, Width = 300, Stroke = Brushes.Green, StrokeThickness = 2, Fill = Brushes.Transparent };
+            System.Windows.Shapes.Rectangle ARectangle = new Rectangle() { Height = 150, Width = 300, Stroke = System.Windows.Media.Brushes.Green, StrokeThickness = 2, Fill = System.Windows.Media.Brushes.Transparent };
 
             double x = (Canvas_On_ImgScreen.ActualWidth / 2) - (ARectangle.Width / 2);
             double y = (Canvas_On_ImgScreen.ActualHeight / 2) - (ARectangle.Width / 2);
@@ -579,7 +609,7 @@ namespace GIAO_DIEN
             H = 200;
             W = 350;
 
-            Rectangle ARectangle = new Rectangle() { Height = 200, Width = 350, Stroke = Brushes.Green, Fill = Brushes.Transparent, StrokeThickness = 2 };
+            Rectangle ARectangle = new Rectangle() { Height = 200, Width = 350, Stroke = System.Windows.Media.Brushes.Green, Fill = System.Windows.Media.Brushes.Transparent, StrokeThickness = 2 };
 
             double x = (Canvas_On_ImgScreen.ActualWidth / 2) - (ARectangle.Width / 2);
             double y = (Canvas_On_ImgScreen.ActualHeight / 2) - (ARectangle.Width / 2);
@@ -675,9 +705,9 @@ namespace GIAO_DIEN
         }
 
 
-
         private void Canvas_On_ImgScreen_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
+
             dragClickdown.X = e.GetPosition(ImgScreen).X;
             dragClickdown.Y = e.GetPosition(ImgScreen).Y;
             //Total_Count_Value.Text = dragClickdown.X.ToString();
@@ -685,8 +715,12 @@ namespace GIAO_DIEN
         }
         OpenCvSharp.Rect rectangle = new OpenCvSharp.Rect();
 
+
+
+
         private void Canvas_On_ImgScreen_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
+
             dragClickup.X = e.GetPosition(ImgScreen).X;
             dragClickup.Y = e.GetPosition(ImgScreen).Y;
             if (circleCheck == true)
@@ -714,35 +748,22 @@ namespace GIAO_DIEN
                 //V_Slider_Value.Text = W.ToString() + " " + H.ToString();
             }
         }
-        private void Canvas_On_ImgScreen_MouseMove(object sender, MouseEventArgs e)
-        {
-            teets.Text = "X: " + e.GetPosition(ImgScreen).X.ToString() + "," + "Y: " + e.GetPosition(ImgScreen).Y.ToString();
-        }
-
-        private void ImgScreen_MouseMove(object sender, MouseEventArgs e)
-        {
-            teets.Text = "X: " + e.GetPosition(ImgScreen).X.ToString() + "," + "Y: " + e.GetPosition(ImgScreen).Y.ToString();
-        }
-
-        private void ImgScreen_MouseUp(object sender, MouseButtonEventArgs e)
-        {
-
-        }
-
-
-        private void ImgScreen_MouseDown(object sender, MouseButtonEventArgs e)
-        {
-
-        }
 
 
         //--------------------------------------------------------------------------------------------------------------------------------------
-        private void SendCropImgBtn_Click(object sender, RoutedEventArgs e)
-        {
-            //SendImageCommand();
-            pythonInterface.SendCommand("thresh");
 
+
+
+
+        private void ImgScreen_MouseUp(object sender, MouseButtonEventArgs e)
+        {
         }
+
+
+
+        //--------------------------------------------------------------------------------------------------------------------------------------
+
+
 
         ///******************************************** COUNT *****************************************************************
         //////
@@ -760,12 +781,12 @@ namespace GIAO_DIEN
             var command = PythonInterface.BuildCommand("centers");
             string bacteriaCentersString = pythonInterface.SendCommandAndReceiveRawString(command);
             List<BacteriaCenter> bacteriaCenters = Converter.StringToBacteriaCenters(bacteriaCentersString);
-            
+
             //lap qua cai mang bacter
             //imagesource 
             //lay toa do chuot tren image source x, y
             //for b in bacteriaCenters   ===> Distance(b.x, b.y, x, y) 
-           
+
 
         }
 
@@ -773,8 +794,8 @@ namespace GIAO_DIEN
         ///
 
         private void ConfirmBtn_Click(object sender, RoutedEventArgs e)
-        {   
-            
+        {
+
             if (tamConfirm == true)
             {
                 backStack.Push(new BACKDATA("confirm", 0));
@@ -783,7 +804,7 @@ namespace GIAO_DIEN
             backStack.Push(new BACKDATA("confirm", 999));
 
             PrintBackStack();
-            ImgAfterAddMask = new Mat();    
+            ImgAfterAddMask = new Mat();
             if (circleCheck == true)
             {
                 if (ZoomInRatio > 0)
@@ -820,7 +841,7 @@ namespace GIAO_DIEN
 
                     currentImagePath = Directory.GetCurrentDirectory() + "\\" + saveFileName;
 
-                 
+
 
                 }
             }
@@ -833,11 +854,18 @@ namespace GIAO_DIEN
                 ImgScreen.Source = converted;
             }
         }
-//----------------------------------------------------------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------------------------------------------------------------
         private void ClearBtn_Click(object sender, RoutedEventArgs e)
         {
+            ImgScreen_Canvas.Children.Remove(polyline);
+            ImgScreen_Canvas.Children.Remove(smallDot);
+
             Canvas_On_ImgScreen.Children.Clear();
+
             ImgScreen.Source = null;
+
+            addSecmentEnable = false;
+            getPosByClickEnable = false;
 
             DistanceEnable = false;
             ThreshEnable = false;
@@ -860,7 +888,7 @@ namespace GIAO_DIEN
             }
 
         }
-//--------------------------------------------------------------------------------------------------------------------------------------
+        //--------------------------------------------------------------------------------------------------------------------------------------
 
         /// <summary>
         /// HSV CONTROL MANUAL, GRAYSCALE, THRESHOLD _______________________________________________________________
@@ -944,7 +972,8 @@ namespace GIAO_DIEN
 
                     bitmapSource.Freeze();
 
-                    ImgScreen.Dispatcher.Invoke(new Action(() => {
+                    ImgScreen.Dispatcher.Invoke(new Action(() =>
+                    {
                         ImgScreen.Source = null;
                         ImgScreen.Source = bitmapSource;
                     }));
@@ -954,7 +983,7 @@ namespace GIAO_DIEN
 
             }
 
-//------------------------------- NOTE: sau khi click Save nho xoa URLimage hien tai -------------------------------------------------
+            //------------------------------- NOTE:  --------------------------------------------------------------------------------
         }
         private void Ena_Threshold_Unchecked(object sender, RoutedEventArgs e)
         {
@@ -965,7 +994,7 @@ namespace GIAO_DIEN
             }
             ImgScreen.Source = Convert(BitmapConverter.ToBitmap(ImgAfterAddMask));
 
-          
+
 
         }
         private void Ena_Distance_Checked(object sender, RoutedEventArgs e)
@@ -988,7 +1017,8 @@ namespace GIAO_DIEN
 
                     bitmapSource.Freeze();
 
-                    ImgScreen.Dispatcher.Invoke(new Action(() => {
+                    ImgScreen.Dispatcher.Invoke(new Action(() =>
+                    {
                         ImgScreen.Source = null;
                         ImgScreen.Source = bitmapSource;
                     }));
@@ -1007,9 +1037,9 @@ namespace GIAO_DIEN
                 Sens_Slider.IsEnabled = false;
             }
             ImgScreen.Source = Convert(BitmapConverter.ToBitmap(ImgAfterAddMask));
-            
+
         }
-      
+
 
         //-------------------------------------------------------------------------------------------------------------------------------------- 
         private void PrintBackStack()
@@ -1170,7 +1200,7 @@ namespace GIAO_DIEN
                 }
 
             }
-            
+
 
         }
 
@@ -1465,7 +1495,7 @@ namespace GIAO_DIEN
 
         }
 
-        
+
         private async Task SliderValueConsumerAsync()
         {
             var reader = channelValues.Reader;
@@ -1486,10 +1516,11 @@ namespace GIAO_DIEN
                         if (image != null)
                         {
                             var bitmapSource = image.ToBitmapSource();
-                            
+
                             bitmapSource.Freeze();
 
-                            ImgScreen.Dispatcher.Invoke(new Action(() => {
+                            ImgScreen.Dispatcher.Invoke(new Action(() =>
+                            {
                                 ImgScreen.Source = null;
                                 ImgScreen.Source = bitmapSource;
                             }));
@@ -1508,9 +1539,9 @@ namespace GIAO_DIEN
 
         private async void Thresh_Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-           var thresholdRoundValue = Math.Round(e.NewValue);
-           var command = PythonInterface.BuildCommand("thresh", thresholdRoundValue.ToString(), currentImagePath);
-           await channelValues.Writer.WriteAsync(command, CancellationToken.None);
+            var thresholdRoundValue = Math.Round(e.NewValue);
+            var command = PythonInterface.BuildCommand("thresh", thresholdRoundValue.ToString(), currentImagePath);
+            await channelValues.Writer.WriteAsync(command, CancellationToken.None);
 
             Thresh_Value.Text = Thresh_Slider.Value.ToString();
 
@@ -1519,7 +1550,7 @@ namespace GIAO_DIEN
         private async void Sens_Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             var thresholdRoundValue = Math.Round(Thresh_Slider.Value).ToString();
-            var distanceRoundValue = Math.Round(e.NewValue).ToString();          
+            var distanceRoundValue = Math.Round(e.NewValue).ToString();
 
             var command = PythonInterface.BuildCommand("distance", distanceRoundValue, thresholdRoundValue, currentImagePath);
             await channelValues.Writer.WriteAsync(command, CancellationToken.None);
@@ -1706,7 +1737,7 @@ namespace GIAO_DIEN
         }
 
 
-       
+
         private Mat convertToMat(IGrabResult rtnGrabResult)
         {
             PixelDataConverter converter = new PixelDataConverter();
@@ -1721,5 +1752,121 @@ namespace GIAO_DIEN
         {
             return OpenCvSharp.Extensions.BitmapConverter.ToBitmap(image);
         }
+
+
+
+
+
+
+
+
+        //-------------------------------------------- POSITION MOUSE ------------------------------------------------------------------
+
+        private void AddSecmentBtn_Click(object sender, RoutedEventArgs e)
+        {
+            addSecmentEnable = true;
+        }
+
+
+        double positionMouseX;
+        double positionMouseY;
+
+        private void TopCanvas_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (addSecmentEnable == true)
+            {
+                positionMouseX = e.GetPosition(ImgScreen_Canvas).X;
+                positionMouseY = e.GetPosition(ImgScreen_Canvas).Y;
+
+                teets.Text = "X: " + positionMouseX + "," + "Y: " + positionMouseY;
+
+                getPosByClickEnable = true;
+            }
+        }
+
+
+        List<PositionMouse> positionMouses = new List<PositionMouse>();
+        Polyline polyline = new Polyline();
+        Rectangle smallDot = new Rectangle();
+
+
+        private void TopCanvas_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+
+            if (addSecmentEnable == true && getPosByClickEnable == true)
+            {
+                var positionMousesCur = new PositionMouse(positionMouseX, positionMouseY);
+                positionMouses.Add(positionMousesCur);
+
+                foreach (var item in positionMouses)
+                {
+                    Console.WriteLine(item);
+                }
+                Console.WriteLine("++++++++++++++++++");
+
+                SolidColorBrush brush = new SolidColorBrush();
+                brush.Color = Colors.Black;
+                PointCollection polygonPoints = new PointCollection();
+
+                polyline.Stroke = brush;
+                polyline.StrokeThickness = 2;
+
+                smallDot = new Rectangle()
+                {
+                    Fill = System.Windows.Media.Brushes.Red,
+                    Width = 5,
+                    Height = 5
+                };
+
+
+                if (positionMouses.Count() > 0)
+                {
+                    //foreach (PositionMouse items in positionMouses)
+                    //{
+                    //    Canvas.SetLeft(smallDot, items.posx);
+                    //    Canvas.SetTop(smallDot, items.posy);
+
+                    //    var p = new System.Windows.Point(items.posx, items.posy);
+                    //    polygonPoints.Add(p);
+
+                    //}  
+                    for (int i = 0; i < positionMouses.Count(); i++)
+                    {
+                        Canvas.SetLeft(smallDot, positionMouses[i].posx);
+                        Canvas.SetTop(smallDot, positionMouses[i].posy);
+
+                        polygonPoints.Add(new System.Windows.Point(positionMouses[i].posx, positionMouses[i].posy));
+                    }
+                    polygonPoints.Add(new System.Windows.Point(positionMouses[0].posx, positionMouses[0].posy));
+
+
+                    if (ImgScreen_Canvas.Children.Count > 0)
+                    {
+                        ImgScreen_Canvas.Children.RemoveAt(ImgScreen_Canvas.Children.Count - 1);
+                        polyline.Points = polygonPoints;
+                        ImgScreen_Canvas.Children.Add(smallDot);
+                        ImgScreen_Canvas.Children.Add(polyline);
+                    }
+                    
+                }
+            }
+        }
+
+
+        private void SendCropImgBtn_Click(object sender, RoutedEventArgs e)
+        {
+
+            Mat maskSecmentMat = new Mat(SourceImg.Height, SourceImg.Width, MatType.CV_8UC3, Scalar.Black);
+            RenderTargetBitmap renderBitmap = new RenderTargetBitmap((int)ImgScreen_Canvas.ActualWidth, (int)ImgScreen_Canvas.ActualHeight, 96d, 96d, System.Windows.Media.PixelFormats.Pbgra32);
+            renderBitmap.Render(ImgScreen_Canvas);
+
+            BitmapEncoder encoder = new PngBitmapEncoder(); 
+            encoder.Frames.Add(BitmapFrame.Create(renderBitmap));
+            encoder.Save(new FileStream(@"C:/Users/admin/Desktop/do_an_scan/New Working Scan/git_tutorial/SCAN_SERVER/imgcanvas.jpg",FileMode.Create));
+            
+
+
+        }
+
     }
 }
