@@ -62,7 +62,8 @@ namespace GIAO_DIEN
 
         Stack<BACKDATA> backStack = new Stack<BACKDATA>();
         Stack<BACKDATA> nextStack = new Stack<BACKDATA>();
-
+        List<PositionMouse> positionMouses = new List<PositionMouse>();
+        
 
         private double cropX = 0;
         private double cropY = 0;
@@ -80,7 +81,7 @@ namespace GIAO_DIEN
         double H, W = 0;
         System.Windows.Point dragClickup;
         System.Windows.Point dragClickdown;
-
+        
         string curLabel;
         double curValue;
         //string a;
@@ -95,6 +96,7 @@ namespace GIAO_DIEN
         bool ThreshEnable = false;
         bool addSecmentEnable = false;
         bool getPosByClickEnable = false;
+        bool SegmentActivated = false;
 
 
         //int zoomX = 0;
@@ -103,6 +105,7 @@ namespace GIAO_DIEN
         private int time = 0;
         PythonInterface pythonInterface;
         string currentImagePath;
+        string SourceImgSegment;
 
         public WindowStart()
         {
@@ -843,10 +846,9 @@ namespace GIAO_DIEN
                     ImgAfterAddMask.SaveImage(saveFileName);
 
                     currentImagePath = Directory.GetCurrentDirectory() + "\\" + saveFileName;
-
-
-
+                
                 }
+
             }
             if (RectangleCheck == true)
             {
@@ -861,7 +863,9 @@ namespace GIAO_DIEN
         private void ClearBtn_Click(object sender, RoutedEventArgs e)
         {
             ImgScreen_Canvas.Children.Remove(polyline);
-            Canvas_On_ImgScreen.Children.Remove(smallDot);
+            ImgScreen_Canvas.Children.Remove(smallDots);
+            positionMouses.Clear();
+
             
 
             Canvas_On_ImgScreen.Children.Clear();
@@ -873,6 +877,11 @@ namespace GIAO_DIEN
 
             DistanceEnable = false;
             ThreshEnable = false;
+            Sens_Slider.IsEnabled = false;
+            Thresh_Slider.IsEnabled = false;
+            Thresh_Slider.Value = 0;
+            Sens_Slider.Value = 0;
+
             circleCheck = false;
 
             if (circleCheck == false)
@@ -882,14 +891,8 @@ namespace GIAO_DIEN
                 size150mm.IsChecked = false;
             }
 
-            if (DistanceEnable == false)
-            {
-                Sens_Slider.IsEnabled = false;
-            }
-            if (ThreshEnable == false)
-            {
-                Thresh_Slider.IsEnabled = false;
-            }
+
+            
 
         }
         //--------------------------------------------------------------------------------------------------------------------------------------
@@ -983,7 +986,31 @@ namespace GIAO_DIEN
                     }));
                 }
 
+            }
 
+
+            if (ThreshEnable == true && SegmentActivated == true)
+            {
+                Thresh_Slider.IsEnabled = true;
+                var thresholdRoundValue = Math.Round(Thresh_Slider.Value);
+                var command = PythonInterface.BuildCommand("thresh", thresholdRoundValue.ToString(), SourceImgSegment);
+                Mat image = pythonInterface.SendCommand(command);
+
+                CommandCallbackEventDispatch(command, image);
+
+
+                if (image != null)
+                {
+                    var bitmapSource = image.ToBitmapSource();
+
+                    bitmapSource.Freeze();
+
+                    ImgScreen.Dispatcher.Invoke(new Action(() =>
+                    {
+                        ImgScreen.Source = null;
+                        ImgScreen.Source = bitmapSource;
+                    }));
+                }
 
             }
 
@@ -995,9 +1022,14 @@ namespace GIAO_DIEN
             if (ThreshEnable == false)
             {
                 Thresh_Slider.IsEnabled = false;
+                ImgScreen.Source = Convert(BitmapConverter.ToBitmap(ImgAfterAddMask));
             }
-            ImgScreen.Source = Convert(BitmapConverter.ToBitmap(ImgAfterAddMask));
-
+            
+            if (ThreshEnable == false && SegmentActivated == true)
+            {
+                Thresh_Slider.IsEnabled = false;
+                ImgScreen.Source = Convert(BitmapConverter.ToBitmap(ImgAfterSecment));
+            }
 
 
         }
@@ -1031,6 +1063,33 @@ namespace GIAO_DIEN
             }
 
 
+            if (DistanceEnable == true && SegmentActivated == true)
+            {
+                Sens_Slider.IsEnabled = true;
+                var distanceRoundValue = Math.Round(Sens_Slider.Value).ToString();
+                var thresholdRoundValue = Math.Round(Thresh_Slider.Value).ToString();
+                var command = PythonInterface.BuildCommand("distance", distanceRoundValue, thresholdRoundValue, SourceImgSegment);
+                Mat image = pythonInterface.SendCommand(command);
+
+                CommandCallbackEventDispatch(command, image);
+
+
+                if (image != null)
+                {
+                    var bitmapSource = image.ToBitmapSource();
+
+                    bitmapSource.Freeze();
+
+                    ImgScreen.Dispatcher.Invoke(new Action(() =>
+                    {
+                        ImgScreen.Source = null;
+                        ImgScreen.Source = bitmapSource;
+                    }));
+                }
+
+            }
+
+
         }
 
         private void Ena_Distance_Unchecked(object sender, RoutedEventArgs e)
@@ -1039,8 +1098,15 @@ namespace GIAO_DIEN
             if (DistanceEnable == false)
             {
                 Sens_Slider.IsEnabled = false;
+                ImgScreen.Source = Convert(BitmapConverter.ToBitmap(ImgAfterAddMask));
             }
-            ImgScreen.Source = Convert(BitmapConverter.ToBitmap(ImgAfterAddMask));
+
+            if (DistanceEnable == false && SegmentActivated == true)
+            {
+                Sens_Slider.IsEnabled = false;
+                ImgScreen.Source = Convert(BitmapConverter.ToBitmap(ImgAfterSecment));
+            }
+            
 
         }
 
@@ -1543,23 +1609,51 @@ namespace GIAO_DIEN
 
         private async void Thresh_Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            var thresholdRoundValue = Math.Round(e.NewValue);
-            var command = PythonInterface.BuildCommand("thresh", thresholdRoundValue.ToString(), currentImagePath);
-            await channelValues.Writer.WriteAsync(command, CancellationToken.None);
+            if (SegmentActivated == false)
+            {
+                var thresholdRoundValue = Math.Round(e.NewValue);
+                var command = PythonInterface.BuildCommand("thresh", thresholdRoundValue.ToString(), currentImagePath);
+                await channelValues.Writer.WriteAsync(command, CancellationToken.None);
 
-            Thresh_Value.Text = Thresh_Slider.Value.ToString();
+                Thresh_Value.Text = Thresh_Slider.Value.ToString();
+            }
+
+            if (SegmentActivated == true)
+            {
+                var thresholdRoundValue = Math.Round(e.NewValue);
+                var command = PythonInterface.BuildCommand("thresh", thresholdRoundValue.ToString(), SourceImgSegment);
+                await channelValues.Writer.WriteAsync(command, CancellationToken.None);
+
+                Thresh_Value.Text = Thresh_Slider.Value.ToString();
+            }
+           
 
         }
 
         private async void Sens_Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            var thresholdRoundValue = Math.Round(Thresh_Slider.Value).ToString();
-            var distanceRoundValue = Math.Round(e.NewValue).ToString();
+            if (SegmentActivated == false)
+            {
+                var thresholdRoundValue = Math.Round(Thresh_Slider.Value).ToString();
+                var distanceRoundValue = Math.Round(e.NewValue).ToString();
 
-            var command = PythonInterface.BuildCommand("distance", distanceRoundValue, thresholdRoundValue, currentImagePath);
-            await channelValues.Writer.WriteAsync(command, CancellationToken.None);
+                var command = PythonInterface.BuildCommand("distance", distanceRoundValue, thresholdRoundValue, currentImagePath);
+                await channelValues.Writer.WriteAsync(command, CancellationToken.None);
 
-            Sens_Value.Text = Sens_Slider.Value.ToString();
+                Sens_Value.Text = Sens_Slider.Value.ToString();
+            }
+
+            if (SegmentActivated == true)
+            {
+                var thresholdRoundValue = Math.Round(Thresh_Slider.Value).ToString();
+                var distanceRoundValue = Math.Round(e.NewValue).ToString();
+
+                var command = PythonInterface.BuildCommand("distance", distanceRoundValue, thresholdRoundValue, SourceImgSegment);
+                await channelValues.Writer.WriteAsync(command, CancellationToken.None);
+
+                Sens_Value.Text = Sens_Slider.Value.ToString();
+            }
+         
 
         }
 
@@ -1768,7 +1862,7 @@ namespace GIAO_DIEN
 
         private void AddSecmentBtn_Click(object sender, RoutedEventArgs e)
         {
-            addSecmentEnable = true;
+            SegmentActivated = true;
         }
 
 
@@ -1777,7 +1871,7 @@ namespace GIAO_DIEN
 
         private void TopCanvas_MouseMove(object sender, MouseEventArgs e)
         {
-            if (addSecmentEnable == true)
+            if (SegmentActivated == true)
             {
                 positionMouseX = e.GetPosition(ImgScreen_Canvas).X;
                 positionMouseY = e.GetPosition(ImgScreen_Canvas).Y;
@@ -1789,16 +1883,17 @@ namespace GIAO_DIEN
         }
 
 
-        List<PositionMouse> positionMouses = new List<PositionMouse>();
+        
 
         Polyline polyline = new Polyline();
-        Rectangle smallDot = new Rectangle();
+
+        Rectangle smallDots = new Rectangle();
 
 
         private void TopCanvas_MouseDown(object sender, MouseButtonEventArgs e)
         {
 
-            if (addSecmentEnable == true && getPosByClickEnable == true)
+            if (SegmentActivated == true && getPosByClickEnable == true)
             {
                 var positionMousesCur = new PositionMouse(positionMouseX, positionMouseY);
                 positionMouses.Add(positionMousesCur);
@@ -1816,13 +1911,12 @@ namespace GIAO_DIEN
                 polyline.Stroke = brush;
                 polyline.StrokeThickness = 2;
 
-                smallDot = new Rectangle()
+                smallDots = new Rectangle()
                 {
                     Fill = System.Windows.Media.Brushes.Red,
                     Width = 5,
                     Height = 5
                 };
-
 
                 if (positionMouses.Count() > 0)
                 {
@@ -1837,8 +1931,8 @@ namespace GIAO_DIEN
                     //}  
                     for (int i = 0; i < positionMouses.Count(); i++)
                     {
-                        Canvas.SetLeft(smallDot, positionMouses[i].posx);
-                        Canvas.SetTop(smallDot, positionMouses[i].posy);
+                        Canvas.SetLeft(smallDots, positionMouses[i].posx);
+                        Canvas.SetTop(smallDots, positionMouses[i].posy);
 
                         polygonPoints.Add(new System.Windows.Point(positionMouses[i].posx, positionMouses[i].posy));
                     }
@@ -1851,18 +1945,22 @@ namespace GIAO_DIEN
                         polyline.Points = polygonPoints;
  
                     }
-                    ImgScreen_Canvas.Children.Add(smallDot);
-                    ImgScreen_Canvas.Children.Add(polyline);
+                   
 
                 }
+                ImgScreen_Canvas.Children.Add(smallDots);
+                ImgScreen_Canvas.Children.Add(polyline);
             }
         }
 
         //--------------------------------- BUG: khong the xoa smallDot ---------------------------------------------
-        Mat KQ;
+        Mat ImgAfterSecment;
+        
         private void SendCropImgBtn_Click(object sender, RoutedEventArgs e)
         {
-            KQ = new Mat();
+            
+            
+            ImgAfterSecment = new Mat();
             List<PositionMouseInImgSource> positionMousesInImgSoucre = new List<PositionMouseInImgSource>();
 
             double[][] positionArray = new double[positionMouses.Count + 1][];
@@ -1870,33 +1968,29 @@ namespace GIAO_DIEN
             OpenCvSharp.Point[] position = new OpenCvSharp.Point[positionMouses.Count];
             for (int i = 0; i < positionMouses.Count; i++)
             {
-                //positionMousesInImgSoucre[i].posx = positionMouses[i].posx * scaleRatio;
-                //positionMousesInImgSoucre[i].posy = positionMouses[i].posy * scaleRatio;
-                //double[] position = new double[2];
-                //position[0] = positionMouses[i].posx * scaleRatio;
-                //position[1] = positionMouses[i].posy * scaleRatio;
-                //positionArray.Append(position);
                 position[i] = new OpenCvSharp.Point((int)(positionMouses[i].posx * scaleRatio), (int)(positionMouses[i].posy * scaleRatio));
-
             }
-            //
+            
             LineTypes line = new LineTypes();
             Mat blackMask = new Mat(SourceImg.Height, SourceImg.Width, MatType.CV_8UC3, Scalar.Black);
             Cv2.FillPoly(blackMask, new OpenCvSharp.Point[][] { position}, Scalar.All(255));
-            Cv2.BitwiseAnd(SourceImg, blackMask, KQ);
-            var converted = Convert(BitmapConverter.ToBitmap(KQ));
+            Cv2.BitwiseAnd(SourceImg, blackMask, ImgAfterSecment);
+            var imgAferSecmented = Convert(BitmapConverter.ToBitmap(ImgAfterSecment));
+            ImgScreen.Source = imgAferSecmented;
+
             var saveFileName = "imgcanvas.jpg";
-            KQ.SaveImage(saveFileName);
+            ImgAfterSecment.SaveImage(saveFileName);          
+            SourceImgSegment = Directory.GetCurrentDirectory() + "\\" + saveFileName;
 
-            
-            string SourceImgSec = Directory.GetCurrentDirectory() + "\\" + saveFileName;
+            ImgScreen_Canvas.Children.Remove(polyline);
+            ImgScreen_Canvas.Children.Remove(smallDots);
 
-            //SourceImgSec = Cv2.ImRead(Directory.GetCurrentDirectory() + "\\" + saveFileName);
-            //ImgScreen.Source = converted;
+
+
             // Cv2.FillPoly()
 
             //double[] positionArray = positionMousesInImgSoucre.ToArray();
-            
+
             //Mat MatThreshold = new Mat();
             //Mat gray = new Mat();
             //Mat maskSecmentMat = new Mat(SourceImg.Height, SourceImg.Width, MatType.CV_8UC3, Scalar.Black);
@@ -1910,13 +2004,7 @@ namespace GIAO_DIEN
 
             //SourceImgSec = Cv2.ImRead(Directory.GetCurrentDirectory() + "\\" + saveFileName);
 
-      
-
             //Point[] scaledpoints = new Point[positionMouses.Count()];
-            
-
-
-
 
             //Polygon scaledPolygon = new Polygon(scaledpoints);
 
@@ -1924,8 +2012,6 @@ namespace GIAO_DIEN
             //mat.SetTo(new MCvScalar(255)); // Đặt tất cả các điểm ảnh màu trắng
             //Point[][] contours = new Point[1][] { scaledPolygon.Points };
             //CvInvoke.FillPoly(mat, contours, new MCvScalar(0)); //
-
-
 
             //Cv2.ImShow("dssd", SourceImgSec);
             //Cv2.CvtColor(SourceImgSec, gray, ColorConversionCodes.BGR2GRAY);
