@@ -33,6 +33,7 @@ using Rectangle = System.Windows.Shapes.Rectangle;
 //using System.Drawing;
 using Size = OpenCvSharp.Size;
 using Image = System.Windows.Controls.Image;
+using Point = OpenCvSharp.Point;
 
 namespace GIAO_DIEN
 {
@@ -94,6 +95,7 @@ namespace GIAO_DIEN
         bool ThreshEnable = false;
         bool addSecmentEnable = false;
         bool getPosByClickEnable = false;
+
 
         //int zoomX = 0;
         //  PixelDataConverter converter = new PixelDataConverter();
@@ -796,6 +798,7 @@ namespace GIAO_DIEN
         private void ConfirmBtn_Click(object sender, RoutedEventArgs e)
         {
 
+
             if (tamConfirm == true)
             {
                 backStack.Push(new BACKDATA("confirm", 0));
@@ -858,14 +861,15 @@ namespace GIAO_DIEN
         private void ClearBtn_Click(object sender, RoutedEventArgs e)
         {
             ImgScreen_Canvas.Children.Remove(polyline);
-            ImgScreen_Canvas.Children.Remove(smallDot);
+            Canvas_On_ImgScreen.Children.Remove(smallDot);
+            
 
             Canvas_On_ImgScreen.Children.Clear();
 
             ImgScreen.Source = null;
 
             addSecmentEnable = false;
-            getPosByClickEnable = false;
+            getPosByClickEnable = false;    
 
             DistanceEnable = false;
             ThreshEnable = false;
@@ -1786,6 +1790,7 @@ namespace GIAO_DIEN
 
 
         List<PositionMouse> positionMouses = new List<PositionMouse>();
+
         Polyline polyline = new Polyline();
         Rectangle smallDot = new Rectangle();
 
@@ -1844,26 +1849,103 @@ namespace GIAO_DIEN
                     {
                         ImgScreen_Canvas.Children.RemoveAt(ImgScreen_Canvas.Children.Count - 1);
                         polyline.Points = polygonPoints;
-                        ImgScreen_Canvas.Children.Add(smallDot);
-                        ImgScreen_Canvas.Children.Add(polyline);
+ 
                     }
-                    
+                    ImgScreen_Canvas.Children.Add(smallDot);
+                    ImgScreen_Canvas.Children.Add(polyline);
+
                 }
             }
         }
 
-
+        //--------------------------------- BUG: khong the xoa smallDot ---------------------------------------------
+        Mat KQ;
         private void SendCropImgBtn_Click(object sender, RoutedEventArgs e)
         {
+            KQ = new Mat();
+            List<PositionMouseInImgSource> positionMousesInImgSoucre = new List<PositionMouseInImgSource>();
 
-            Mat maskSecmentMat = new Mat(SourceImg.Height, SourceImg.Width, MatType.CV_8UC3, Scalar.Black);
-            RenderTargetBitmap renderBitmap = new RenderTargetBitmap((int)ImgScreen_Canvas.ActualWidth, (int)ImgScreen_Canvas.ActualHeight, 96d, 96d, System.Windows.Media.PixelFormats.Pbgra32);
-            renderBitmap.Render(ImgScreen_Canvas);
+            double[][] positionArray = new double[positionMouses.Count + 1][];
+            double scaleRatio = 6.5;
+            OpenCvSharp.Point[] position = new OpenCvSharp.Point[positionMouses.Count];
+            for (int i = 0; i < positionMouses.Count; i++)
+            {
+                //positionMousesInImgSoucre[i].posx = positionMouses[i].posx * scaleRatio;
+                //positionMousesInImgSoucre[i].posy = positionMouses[i].posy * scaleRatio;
+                //double[] position = new double[2];
+                //position[0] = positionMouses[i].posx * scaleRatio;
+                //position[1] = positionMouses[i].posy * scaleRatio;
+                //positionArray.Append(position);
+                position[i] = new OpenCvSharp.Point((int)(positionMouses[i].posx * scaleRatio), (int)(positionMouses[i].posy * scaleRatio));
 
-            BitmapEncoder encoder = new PngBitmapEncoder(); 
-            encoder.Frames.Add(BitmapFrame.Create(renderBitmap));
-            encoder.Save(new FileStream(@"C:/Users/admin/Desktop/do_an_scan/New Working Scan/git_tutorial/SCAN_SERVER/imgcanvas.jpg",FileMode.Create));
+            }
+            //
+            LineTypes line = new LineTypes();
+            Mat blackMask = new Mat(SourceImg.Height, SourceImg.Width, MatType.CV_8UC3, Scalar.Black);
+            Cv2.FillPoly(blackMask, new OpenCvSharp.Point[][] { position}, Scalar.All(255));
+            Cv2.BitwiseAnd(SourceImg, blackMask, KQ);
+            var converted = Convert(BitmapConverter.ToBitmap(KQ));
+            var saveFileName = "imgcanvas.jpg";
+            KQ.SaveImage(saveFileName);
+
             
+            string SourceImgSec = Directory.GetCurrentDirectory() + "\\" + saveFileName;
+
+            //SourceImgSec = Cv2.ImRead(Directory.GetCurrentDirectory() + "\\" + saveFileName);
+            //ImgScreen.Source = converted;
+            // Cv2.FillPoly()
+
+            //double[] positionArray = positionMousesInImgSoucre.ToArray();
+            
+            //Mat MatThreshold = new Mat();
+            //Mat gray = new Mat();
+            //Mat maskSecmentMat = new Mat(SourceImg.Height, SourceImg.Width, MatType.CV_8UC3, Scalar.Black);
+            //RenderTargetBitmap renderBitmap = new RenderTargetBitmap((int)Canvas_On_ImgScreen.ActualWidth, (int)Canvas_On_ImgScreen.ActualHeight, 96d, 96d, System.Windows.Media.PixelFormats.Pbgra32);
+            //renderBitmap.Render(ImgScreen_Canvas);
+
+            //BitmapEncoder encoder = new PngBitmapEncoder(); 
+            //encoder.Frames.Add(BitmapFrame.Create(renderBitmap));
+            //var saveFileName = "imgcanvas.jpg";
+            //encoder.Save(new FileStream(Directory.GetCurrentDirectory() + "\\" + saveFileName, FileMode.Create));
+
+            //SourceImgSec = Cv2.ImRead(Directory.GetCurrentDirectory() + "\\" + saveFileName);
+
+      
+
+            //Point[] scaledpoints = new Point[positionMouses.Count()];
+            
+
+
+
+
+            //Polygon scaledPolygon = new Polygon(scaledpoints);
+
+            //Mat mat = new Mat(SourceImg.Height, SourceImg.Width, DepthType.Cv8U, 1);
+            //mat.SetTo(new MCvScalar(255)); // Đặt tất cả các điểm ảnh màu trắng
+            //Point[][] contours = new Point[1][] { scaledPolygon.Points };
+            //CvInvoke.FillPoly(mat, contours, new MCvScalar(0)); //
+
+
+
+            //Cv2.ImShow("dssd", SourceImgSec);
+            //Cv2.CvtColor(SourceImgSec, gray, ColorConversionCodes.BGR2GRAY);
+
+            //Cv2.Threshold(gray, MatThreshold, Thresh_Slider.Value, 255, ThresholdTypes.Binary);
+            //Cv2.ImShow("my img", MatThreshold);
+
+            //OpenCvSharp.Point[][] contours;
+            //HierarchyIndex[] hierarchy;
+
+            //Cv2.FindContours(MatThreshold, out contours, out hierarchy, RetrievalModes.List, ContourApproximationModes.ApproxNone);
+            //Cv2.ImShow("fdbfjs",MatThreshold);
+            //Mat mask = new Mat(SourceImgSec.Size(), MatType.CV_8UC1, 0);
+            //Cv2.FillPoly(mask, contours, Scalar.All(255));
+
+            //Mat result = new Mat();
+            //SourceImg.CopyTo(result, mask);
+            //Cv2.ImShow("Result", result);
+
+
 
 
         }

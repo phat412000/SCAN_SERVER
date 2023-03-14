@@ -58,7 +58,7 @@ def main():
 
             cv2.imwrite('output.jpg', thresh)
 
-            #current working directory D:\\aadsd\output.jpg
+
             outputImageThreshUrl = "$START$" + os.getcwd() + "\\output.jpg" + "$END$"
             
             win32file.WriteFile(fileHandle,bytes(outputImageThreshUrl,"UTF-8"),None)
