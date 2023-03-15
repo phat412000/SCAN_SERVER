@@ -62,7 +62,7 @@ namespace GIAO_DIEN
 
         Stack<BACKDATA> backStack = new Stack<BACKDATA>();
         Stack<BACKDATA> nextStack = new Stack<BACKDATA>();
-        List<PositionMouse> positionMouses = new List<PositionMouse>();
+
         
 
         private double cropX = 0;
@@ -94,7 +94,7 @@ namespace GIAO_DIEN
         bool tamConfirm = true;
         bool DistanceEnable = false;
         bool ThreshEnable = false;
-        bool addSecmentEnable = false;
+
         bool getPosByClickEnable = false;
         bool SegmentActivated = false;
 
@@ -862,23 +862,25 @@ namespace GIAO_DIEN
         //----------------------------------------------------------------------------------------------------------------------------------------
         private void ClearBtn_Click(object sender, RoutedEventArgs e)
         {
-            ImgScreen_Canvas.Children.Remove(polyline);
-            ImgScreen_Canvas.Children.Remove(smallDots);
+            //ImgScreen_Canvas.Children.Remove(polyline);
+            //ImgScreen_Canvas.Children.Remove(smallDots);
+            //ImgScreen_Canvas.Children.Clear();
             positionMouses.Clear();
 
-            
-
+            polyline.Points.Clear();
             Canvas_On_ImgScreen.Children.Clear();
 
             ImgScreen.Source = null;
 
-            addSecmentEnable = false;
+            SegmentActivated = false;
             getPosByClickEnable = false;    
 
             DistanceEnable = false;
             ThreshEnable = false;
+            
             Sens_Slider.IsEnabled = false;
             Thresh_Slider.IsEnabled = false;
+            
             Thresh_Slider.Value = 0;
             Sens_Slider.Value = 0;
 
@@ -1860,7 +1862,7 @@ namespace GIAO_DIEN
 
         //-------------------------------------------- POSITION MOUSE ------------------------------------------------------------------
 
-        private void AddSecmentBtn_Click(object sender, RoutedEventArgs e)
+        private void AddSegmentBtn_Click(object sender, RoutedEventArgs e)
         {
             SegmentActivated = true;
         }
@@ -1883,12 +1885,11 @@ namespace GIAO_DIEN
         }
 
 
-        
 
+        List<PositionMouse> positionMouses = new List<PositionMouse>();
         Polyline polyline = new Polyline();
-
         Rectangle smallDots = new Rectangle();
-
+       
 
         private void TopCanvas_MouseDown(object sender, MouseButtonEventArgs e)
         {
@@ -1906,8 +1907,8 @@ namespace GIAO_DIEN
 
                 SolidColorBrush brush = new SolidColorBrush();
                 brush.Color = Colors.Black;
-                PointCollection polygonPoints = new PointCollection();
 
+                PointCollection polygonPoints = new PointCollection();
                 polyline.Stroke = brush;
                 polyline.StrokeThickness = 2;
 
@@ -1939,17 +1940,19 @@ namespace GIAO_DIEN
                     polygonPoints.Add(new System.Windows.Point(positionMouses[0].posx, positionMouses[0].posy));
 
 
-                    if (ImgScreen_Canvas.Children.Count > 0)
+                    if (Canvas_On_ImgScreen.Children.Count > 0)
                     {
-                        ImgScreen_Canvas.Children.RemoveAt(ImgScreen_Canvas.Children.Count - 1);
+                        Canvas_On_ImgScreen.Children.RemoveAt(Canvas_On_ImgScreen.Children.Count - 1);
                         polyline.Points = polygonPoints;
+                        
  
                     }
                    
 
                 }
-                ImgScreen_Canvas.Children.Add(smallDots);
-                ImgScreen_Canvas.Children.Add(polyline);
+                //ImgScreen_Canvas.Children.Add(smallDots);
+                Canvas_On_ImgScreen.Children.Add(smallDots);
+                Canvas_On_ImgScreen.Children.Add(polyline);
             }
         }
 
@@ -1982,9 +1985,7 @@ namespace GIAO_DIEN
             ImgAfterSecment.SaveImage(saveFileName);          
             SourceImgSegment = Directory.GetCurrentDirectory() + "\\" + saveFileName;
 
-            ImgScreen_Canvas.Children.Remove(polyline);
-            ImgScreen_Canvas.Children.Remove(smallDots);
-
+            Canvas_On_ImgScreen.Children.Clear();     
 
 
             // Cv2.FillPoly()
