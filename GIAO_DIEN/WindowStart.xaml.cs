@@ -1,16 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.IO;
 using OpenCvSharp;
@@ -20,20 +16,15 @@ using System.Windows.Threading;
 using Window = System.Windows.Window;
 using System.Threading;
 using Basler.Pylon;
-using Microsoft.Scripting.Runtime;
-using Microsoft.Scripting.Hosting;
-using Python.Runtime;
 
 using Pythonzxrr;
 using OpenCvSharp.WpfExtensions;
-using System.ComponentModel;
 using Microsoft.Win32;
 using System.Threading.Channels;
 using Rectangle = System.Windows.Shapes.Rectangle;
 //using System.Drawing;
-using Size = OpenCvSharp.Size;
-using Image = System.Windows.Controls.Image;
-using Point = OpenCvSharp.Point;
+using OpenCvPoint = OpenCvSharp.Point;
+using GIAO_DIEN.backActionChild;
 
 namespace GIAO_DIEN
 {
@@ -60,10 +51,10 @@ namespace GIAO_DIEN
         //Stack<double> mystackCurValues = new Stack<double>();
         //Stack<string> mystackCurLabels = new Stack<string>();
 
-        Stack<BACKDATA> backStack = new Stack<BACKDATA>();
-        Stack<BACKDATA> nextStack = new Stack<BACKDATA>();
+        Stack<BackAction> backStack = new Stack<BackAction>();
+        Stack<BackAction> nextStack = new Stack<BackAction>();
+        //List<PositionMouse> polyPoints = new List<PositionMouse>();
 
-        
 
         private double cropX = 0;
         private double cropY = 0;
@@ -81,7 +72,7 @@ namespace GIAO_DIEN
         double H, W = 0;
         System.Windows.Point dragClickup;
         System.Windows.Point dragClickdown;
-        
+
         string curLabel;
         double curValue;
         //string a;
@@ -94,6 +85,8 @@ namespace GIAO_DIEN
         bool tamConfirm = true;
         bool DistanceEnable = false;
         bool ThreshEnable = false;
+        bool tamGetPositionMouseBack = false;
+        bool tamGetPositionMouseNext = false;
 
         bool getPosByClickEnable = false;
         bool SegmentActivated = false;
@@ -800,14 +793,19 @@ namespace GIAO_DIEN
 
         private void ConfirmBtn_Click(object sender, RoutedEventArgs e)
         {
-
-
+            
+            //
             if (tamConfirm == true)
             {
-                backStack.Push(new BACKDATA("confirm", 0));
+                var imageActionInTam = new ImageBackAction();
+                imageActionInTam.image = ImgScreen.Source as BitmapImage;
+                backStack.Push(imageActionInTam);
+                
                 tamConfirm = false;
             }
-            backStack.Push(new BACKDATA("confirm", 999));
+
+           ///ImgS
+
 
             PrintBackStack();
             ImgAfterAddMask = new Mat();
@@ -846,7 +844,7 @@ namespace GIAO_DIEN
                     ImgAfterAddMask.SaveImage(saveFileName);
 
                     currentImagePath = Directory.GetCurrentDirectory() + "\\" + saveFileName;
-                
+
                 }
 
             }
@@ -858,6 +856,10 @@ namespace GIAO_DIEN
                 var converted = Convert(BitmapConverter.ToBitmap(ImgAfterAddMask));
                 ImgScreen.Source = converted;
             }
+
+            var imageActionInOutside = new ImageBackAction();
+            imageActionInOutside.image = ImgScreen.Source as BitmapImage;
+            backStack.Push(imageActionInOutside);
         }
         //----------------------------------------------------------------------------------------------------------------------------------------
         private void ClearBtn_Click(object sender, RoutedEventArgs e)
@@ -865,22 +867,21 @@ namespace GIAO_DIEN
             //ImgScreen_Canvas.Children.Remove(polyline);
             //ImgScreen_Canvas.Children.Remove(smallDots);
             //ImgScreen_Canvas.Children.Clear();
-            positionMouses.Clear();
 
-            polyline.Points.Clear();
+           
             Canvas_On_ImgScreen.Children.Clear();
 
             ImgScreen.Source = null;
 
             SegmentActivated = false;
-            getPosByClickEnable = false;    
+            getPosByClickEnable = false;
 
             DistanceEnable = false;
             ThreshEnable = false;
-            
+
             Sens_Slider.IsEnabled = false;
             Thresh_Slider.IsEnabled = false;
-            
+
             Thresh_Slider.Value = 0;
             Sens_Slider.Value = 0;
 
@@ -894,7 +895,7 @@ namespace GIAO_DIEN
             }
 
 
-            
+
 
         }
         //--------------------------------------------------------------------------------------------------------------------------------------
@@ -1026,7 +1027,7 @@ namespace GIAO_DIEN
                 Thresh_Slider.IsEnabled = false;
                 ImgScreen.Source = Convert(BitmapConverter.ToBitmap(ImgAfterAddMask));
             }
-            
+
             if (ThreshEnable == false && SegmentActivated == true)
             {
                 Thresh_Slider.IsEnabled = false;
@@ -1108,7 +1109,7 @@ namespace GIAO_DIEN
                 Sens_Slider.IsEnabled = false;
                 ImgScreen.Source = Convert(BitmapConverter.ToBitmap(ImgAfterSecment));
             }
-            
+
 
         }
 
@@ -1123,8 +1124,83 @@ namespace GIAO_DIEN
             Console.WriteLine("================");
         }
 
+
+        List<PolyPosition> deletedPositions = new List<PolyPosition>();
+        
+        
+
         private void Back_Click(object sender, RoutedEventArgs e)
         {
+            //var positionMouseToStringcut = new PolyPosition(
+            //    positionMouses[positionMouses.Count - 1].posx, 
+            //    positionMouses[positionMouses.Count - 1].posy);
+            //deletedPositions.Add(positionMouseToStringcut);
+
+            //foreach (var item in deletedPositions)
+            //{
+            //    Console.WriteLine(item);
+            //}
+            //Console.WriteLine("++++++++++++++++++");
+
+
+            //tamGetPositionMouseBack = true;
+
+            //if (SegmentActivated == true && tamGetPositionMouseBack == true)
+            //{
+            //    if (positionMouses.Count > 0)
+            //    {
+                  
+            //        int index = positionMouses.Count - 1;
+            //        positionMouses.RemoveAt(index);
+
+
+            //        SolidColorBrush brush = new SolidColorBrush();
+            //        brush.Color = Colors.Black;
+
+            //        PointCollection polygonPoints = new PointCollection();
+            //        polyline.Stroke = brush;
+            //        polyline.StrokeThickness = 2;
+
+            //        smallDots = new Rectangle()
+            //        {
+            //            Fill = System.Windows.Media.Brushes.Red,
+            //            Width = 5,
+            //            Height = 5
+            //        };
+
+            //        if (positionMouses.Count() > 0)
+            //        {
+
+            //            for (int i = 0; i < positionMouses.Count(); i++)
+            //            {
+            //                Canvas.SetLeft(smallDots, positionMouses[i].posx);
+            //                Canvas.SetTop(smallDots, positionMouses[i].posy);
+
+            //                polygonPoints.Add(new System.Windows.Point(positionMouses[i].posx, positionMouses[i].posy));
+            //            }
+            //            polygonPoints.Add(new System.Windows.Point(positionMouses[0].posx, positionMouses[0].posy));
+
+
+            //            if (Canvas_On_ImgScreen.Children.Count > 0)
+            //            {
+            //                Canvas_On_ImgScreen.Children.RemoveAt(Canvas_On_ImgScreen.Children.Count - 1);
+
+            //            }
+            //            polyline.Points = polygonPoints;
+
+            //        }
+            //        //ImgScreen_Canvas.Children.Add(smallDots);
+            //        Canvas_On_ImgScreen.Children.RemoveAt(Canvas_On_ImgScreen.Children.Count - 1);
+            //        Canvas_On_ImgScreen.Children.Add(polyline);
+                    
+            //    }
+            //    if (positionMouses.Count < 1) {
+            //        Canvas_On_ImgScreen.Children.Clear();
+            //    }
+                
+            //}
+
+
             if (backStack.Count() != 0)
             {
 
@@ -1133,56 +1209,72 @@ namespace GIAO_DIEN
                 foreach (var item in nextStack)
                     Console.WriteLine(item);
 
-                backStack.Pop();
+                backStack.Pop(); 
+
 
                 if (backStack.Count() != 0)
                 {
 
-                    BACKDATA dataPo = backStack.Peek();
+                    BackAction dataPo = backStack.Peek();
 
-                    switch (dataPo.labels)
+                    if (dataPo is ThreshBackAction)
                     {
-                        case "thresh":
-                            Console.WriteLine("...............");
-                            Thresh_Slider.Value = dataPo.values;
-                            //foreach (var item in mystackValues)
-                            //    Console.WriteLine(item);
-                            //foreach (var item in mystackLabels)
-                            //    Console.WriteLine(item);
-                            break;
-                        case "local":
-                            Console.WriteLine("...............");
-                            Sens_Slider.Value = dataPo.values;
-                            break;
-                        case "h":
-                            H_Slider.Value = dataPo.values;
-                            break;
-                        case "s":
-                            S_Slider.Value = dataPo.values;
-                            break;
-                        case "v":
-                            V_Slider.Value = dataPo.values;
-                            break;
-                        case "confirm":
-                            SourceImg = Cv2.ImRead(SelectImgPath);
-
-                            BitmapImage bitmap = new BitmapImage();
-                            bitmap.BeginInit();
-                            bitmap.UriSource = new Uri(SelectImgPath);
-                            bitmap.EndInit();
-
-                            ImgScreen.Width = SourceImg.Width / 6.5;
-                            ImgScreen.Height = SourceImg.Height / 6.5;
-                            Canvas_On_ImgScreen.Width = SourceImg.Width / 6.5;
-                            Canvas_On_ImgScreen.Height = SourceImg.Height / 6.5;
-
-                            ImgScreen.Source = bitmap;
-
-                            Canvas_On_ImgScreen.Children.Clear();
-                            break;
-                        default:
-                            break;
+                        var threshAction = (ThreshBackAction)dataPo;
+                        //doube x = 100;
+                        //int a = (int)x;
+                        Thresh_Slider.Value = threshAction.value;
                     }
+                    else if (dataPo is DistanceBackAction)
+                    {
+                        var distanceAction = (DistanceBackAction)dataPo;
+                        Sens_Slider.Value = distanceAction.value;
+                    }
+                    else if (dataPo is ImageBackAction)
+                    {
+                        var imageAction = (ImageBackAction)dataPo;
+                        ImgScreen.Source = imageAction.image;
+                    }
+                    else if (dataPo is PolyBackAction)
+                    {
+                        var polyAction = (PolyBackAction)dataPo;
+                        DrawPolies();
+                    }
+                
+
+                    //switch (dataPo.backActionLabel)
+                    //{
+                    //    case "thresh":
+                    //        Console.WriteLine("...............");
+                    //        Thresh_Slider.Value = dataPo.backActionValue;
+                    //        //foreach (var item in mystackValues)
+                    //        //    Console.WriteLine(item);
+                    //        //foreach (var item in mystackLabels)
+                    //        //    Console.WriteLine(item);
+                    //        break;
+                    //    case "local":
+                    //        Console.WriteLine("...............");
+                    //        Sens_Slider.Value = dataPo.backActionValue;
+                    //        break;
+                    //    case "confirm":
+                    //        SourceImg = Cv2.ImRead(SelectImgPath);
+
+                    //        BitmapImage bitmap = new BitmapImage();
+                    //        bitmap.BeginInit();
+                    //        bitmap.UriSource = new Uri(SelectImgPath);
+                    //        bitmap.EndInit();
+
+                    //        ImgScreen.Width = SourceImg.Width / 6.5;
+                    //        ImgScreen.Height = SourceImg.Height / 6.5;
+                    //        Canvas_On_ImgScreen.Width = SourceImg.Width / 6.5;
+                    //        Canvas_On_ImgScreen.Height = SourceImg.Height / 6.5;
+
+                    //        ImgScreen.Source = bitmap;
+
+                    //        Canvas_On_ImgScreen.Children.Clear();
+                    //        break;
+                    //    default:
+                    //        break;
+                    //}
                 }
                 else
                 {
@@ -1204,88 +1296,103 @@ namespace GIAO_DIEN
 
         private void Next_Click(object sender, RoutedEventArgs e)
         {
+
+            tamGetPositionMouseNext = true;
+
             if (nextStack.Count() != 0)
             {
-                BACKDATA dataPre = nextStack.Peek();
+                //BackAction dataPre = nextStack.Peek();
 
-                BACKDATA popData;
+                //stack, con noi chung
 
-                if (nextStack.Count() != 0)
+                //pop => pop 1 thang con noi chung
+                BackAction popData = nextStack.Pop();
+
+                backStack.Push(popData);
+
+
+                //neu popData la ThreshBackAction
+                if (popData is ThreshBackAction)
                 {
+                    //1 thang con noi chung => 1 thang con rieng ten la ThreshBackAction
+                    ThreshBackAction threshBackAction = (ThreshBackAction)popData;
+                    //luc nay moi co duoc .Value
+                    Thresh_Slider.Value = threshBackAction.value;
 
-                    switch (dataPre.labels)
-                    {
-                        case "thresh":
-                            Console.WriteLine("value cur peek");
-                            Thresh_Slider.Value = dataPre.values;
-                            popData = nextStack.Pop();
-                            curValue = popData.values;
-                            curLabel = popData.labels;
-                            backStack.Push(popData);
+                }
+                else if (popData is DistanceBackAction)
+                {
+                    DistanceBackAction distanceBackAction = (DistanceBackAction)popData;
+                    Sens_Slider.Value = distanceBackAction.value;
+                }
+                else if (popData is ImageBackAction)
+                {
+                    ImageBackAction imageBackAction = (ImageBackAction)popData;
+                    ImgScreen.Source = Convert(BitmapConverter.ToBitmap(ImgAfterAddMask));
 
-                            break;
-                        case "local":
-                            Console.WriteLine("value cur peek");
-                            Sens_Slider.Value = dataPre.values;
-                            popData = nextStack.Pop();
-                            curValue = popData.values;
-                            curLabel = popData.labels;
-                            backStack.Push(popData);
-                            break;
-                        case "h":
-                            Console.WriteLine("value cur peek");
-                            H_Slider.Value = dataPre.values;
-                            popData = nextStack.Pop();
-                            curValue = popData.values;
-                            curLabel = popData.labels;
-                            backStack.Push(popData);
-                            break;
-                        case "s":
-                            Console.WriteLine("value cur peek");
-                            S_Slider.Value = dataPre.values;
-                            popData = nextStack.Pop();
-                            curValue = popData.values;
-                            curLabel = popData.labels;
-                            backStack.Push(popData);
-                            break;
-                        case "v":
-                            Console.WriteLine("value cur peek");
-                            V_Slider.Value = dataPre.values;
-                            popData = nextStack.Pop();
-                            curValue = popData.values;
-                            curLabel = popData.labels;
-                            backStack.Push(popData);
-                            break;
-                        case "confirm":
-                            ImgScreen.Source = Convert(BitmapConverter.ToBitmap(ImgAfterAddMask));
-                            double i = 999;
-                            i = dataPre.values;
-                            popData = nextStack.Pop();
-                            curValue = popData.values;
-                            curLabel = popData.labels;
-                            backStack.Push(popData);
-                            break;
-                        default:
-                            break;
-
-                    }
                 }
 
-            }
+                else if (popData is PolyBackAction)
+                {
+                    DrawPolies();
+                }
 
+                    //dataPre = nextStack.peek(); {label: "thresh", backActionValue: 100}
+
+                    //switch (dataPre.backActionLabel)
+                    //{
+                    //    case "thresh":
+                    //        Console.WriteLine("value cur peek");
+                    //        Thresh_Slider.Value = dataPre.backActionValue;
+                    //        popData = nextStack.Pop();
+                    //        curValue = popData.backActionValue;
+                    //        curLabel = popData.backActionLabel;
+                    //        backStack.Push(popData);
+
+                    //        break;
+                    //    case "local":
+                    //        Console.WriteLine("value cur peek");
+                    //        Sens_Slider.Value = dataPre.backActionValue;
+                    //        popData = nextStack.Pop();
+                    //        curValue = popData.backActionValue;
+                    //        curLabel = popData.backActionLabel;
+                    //        backStack.Push(popData);
+                    //        break;
+                    //    case "confirm":
+                    //        ImgScreen.Source = Convert(BitmapConverter.ToBitmap(ImgAfterAddMask));
+                    //        double i = 999;
+                    //        i = dataPre.backActionValue;
+                    //        popData = nextStack.Pop();
+                    //        curValue = popData.backActionValue;
+                    //        curLabel = popData.backActionLabel;
+                    //        backStack.Push(popData);
+                    //        break;
+                    //    default:
+                    //        break;
+
+                    //}
+                
+
+            }
 
         }
 
         private void Thresh_Slider_PreviewMouseUp(object sender, MouseButtonEventArgs e)
         {
+            
 
             if (tamThresh == true)
             {
-                backStack.Push(new BACKDATA("thresh", 0));
+                var threshActionInLocal = new ThreshBackAction();
+                threshActionInLocal.value = 0;
+                backStack.Push(threshActionInLocal);
+
                 tamThresh = false;
             }
-            backStack.Push(new BACKDATA("thresh", Thresh_Slider.Value));
 
+            var threshActionInSlider = new ThreshBackAction();
+            threshActionInSlider.value = Thresh_Slider.Value;
+            backStack.Push(threshActionInSlider);
 
             PrintBackStack();
 
@@ -1294,15 +1401,18 @@ namespace GIAO_DIEN
         private void OK_Thresh_Click(object sender, RoutedEventArgs e)
         {
 
-            BACKDATA topData;
+            BackAction topData = new BackAction();
 
             if (backStack.Count() == 0)
             {
-                topData = new BACKDATA("thresh", -1);
+                var threshAction = new ThreshBackAction();
+                threshAction.value = -1;
+
+                topData = threshAction;
             }
             else
             {
-                topData = backStack.Peek();
+                topData = backStack.Peek(); //distance
             }
 
 
@@ -1311,19 +1421,33 @@ namespace GIAO_DIEN
 
             double SliderThreshValue = Math.Round(Thresh_Slider.Value);
 
-            if (topData.labels == "thresh" && topData.values == Thresh_Slider.Value && SliderThreshValue == TextBoxThreshValue)
+            if (topData is ThreshBackAction &&
+                //tempObject.value == Thresh_Slider.Value && 
+                SliderThreshValue == TextBoxThreshValue)
             {
-                return;
+                ThreshBackAction tempObject = (ThreshBackAction)topData; 
+
+                if (tempObject.value == Thresh_Slider.Value)
+                {
+                    return;
+                }
             }
 
             if (tamThresh == true)
             {
-                backStack.Push(new BACKDATA("thresh", 0));
+                var threshActionInLocal = new ThreshBackAction();
+                threshActionInLocal.value = 0;
+
+                backStack.Push(threshActionInLocal);
+
                 tamThresh = false;
 
             }
 
-            backStack.Push(new BACKDATA("thresh", Thresh_Slider.Value));
+            var threshSliderActionInSlider = new ThreshBackAction();
+            threshSliderActionInSlider.value = Thresh_Slider.Value;
+
+            backStack.Push(threshSliderActionInSlider);
 
             PrintBackStack();
 
@@ -1333,13 +1457,22 @@ namespace GIAO_DIEN
 
         private void Sens_Slider_PreviewMouseUp(object sender, MouseButtonEventArgs e)
         {
+            
+
             if (tamLocal == true)
             {
-                backStack.Push(new BACKDATA("local", 0));
+                var distanceActionInLocal = new DistanceBackAction();
+
+                distanceActionInLocal.value = 0;
+
+                backStack.Push(distanceActionInLocal);
+
                 tamLocal = false;
             }
-            backStack.Push(new BACKDATA("local", Sens_Slider.Value));
 
+            var distanceActionInSlider = new DistanceBackAction();
+            distanceActionInSlider.value = Sens_Slider.Value;
+            backStack.Push(distanceActionInSlider);
 
             PrintBackStack();
 
@@ -1348,15 +1481,20 @@ namespace GIAO_DIEN
         private void OK_Sens_Click(object sender, RoutedEventArgs e)
         {
 
-            BACKDATA topData;
+            BackAction topData;
+            //DistanceBackAction topData 
 
             if (backStack.Count() == 0)
             {
-                topData = new BACKDATA("local", -1);
+                var distanceAction = new DistanceBackAction();
+                distanceAction.value = -1;
+
+                topData = distanceAction;
             }
             else
             {
-                topData = backStack.Peek();
+                topData = backStack.Peek(); //threshBackAction
+
             }
 
 
@@ -1365,18 +1503,33 @@ namespace GIAO_DIEN
 
             double SliderLocalValue = Math.Round(Sens_Slider.Value);
 
-            if (topData.labels == "local" && topData.values == Sens_Slider.Value && SliderLocalValue == TextBoxLocalValue)
+            if (topData is DistanceBackAction && 
+                //topData.backActionValue == Sens_Slider.Value && 
+                SliderLocalValue == TextBoxLocalValue)
             {
-                return;
+                DistanceBackAction tempobject = (DistanceBackAction)topData;
+                if (tempobject.value == Sens_Slider.Value)
+                {
+                    return;
+                }
             }
+
+          
+            //new Khang
 
 
             if (tamLocal == true)
             {
-                backStack.Push(new BACKDATA("local", 0));
+                var distanceActionInTamLocal = new DistanceBackAction();
+                distanceActionInTamLocal.value = 0; //khang: 0
+                backStack.Push(distanceActionInTamLocal); //[khang: 100]
+               
                 tamLocal = false;
             }
-            backStack.Push(new BACKDATA("local", Sens_Slider.Value));
+
+            var distanceActionSliderValue = new DistanceBackAction();
+            distanceActionSliderValue.value = Sens_Slider.Value; //[distanceAction: 100, distanceAction: 100]
+            backStack.Push(distanceActionSliderValue);
 
             PrintBackStack();
         }
@@ -1384,160 +1537,32 @@ namespace GIAO_DIEN
 
         private void OK_H_Click(object sender, RoutedEventArgs e)
         {
-
-            BACKDATA topData;
-
-            if (backStack.Count() == 0)
-            {
-                topData = new BACKDATA("h", -1);
-            }
-            else
-            {
-                topData = backStack.Peek();
-            }
-
-
-            double TextBoxHValue = double.Parse(H_Slider_Value.Text);
-            TextBoxHValue = Math.Round(TextBoxHValue);
-
-            double SliderHValue = Math.Round(H_Slider.Value);
-
-            if (topData.labels == "h" && topData.values == H_Slider.Value && SliderHValue == TextBoxHValue)
-            {
-                return;
-            }
-
-
-            if (tamH == true)
-            {
-                backStack.Push(new BACKDATA("h", 0));
-                tamH = false;
-            }
-            backStack.Push(new BACKDATA("h", H_Slider.Value));
-
-            PrintBackStack();
-
         }
 
         private void H_Slider_PreviewMouseUp(object sender, MouseButtonEventArgs e)
         {
-
-            if (tamH == true)
-            {
-                backStack.Push(new BACKDATA("h", 0));
-                tamH = false;
-            }
-            backStack.Push(new BACKDATA("h", H_Slider.Value));
-
-
-            PrintBackStack();
-
         }
 
         private void OK_S_Click(object sender, RoutedEventArgs e)
         {
 
-            BACKDATA topData;
-
-            if (backStack.Count() == 0)
-            {
-                topData = new BACKDATA("s", -1);
-            }
-            else
-            {
-                topData = backStack.Peek();
-            }
-
-
-            double TextBoxSValue = double.Parse(S_Slider_Value.Text);
-            TextBoxSValue = Math.Round(TextBoxSValue);
-
-            double SliderSValue = Math.Round(S_Slider.Value);
-
-            if (topData.labels == "s" && topData.values == S_Slider.Value && SliderSValue == TextBoxSValue)
-            {
-                return;
-            }
-
-
-            if (tamS == true)
-            {
-                backStack.Push(new BACKDATA("s", 0));
-                tamS = false;
-            }
-            backStack.Push(new BACKDATA("s", S_Slider.Value));
-
-            PrintBackStack();
 
         }
 
         private void S_Slider_PreviewMouseUp(object sender, MouseButtonEventArgs e)
         {
 
-            if (tamS == true)
-            {
-                backStack.Push(new BACKDATA("s", 0));
-                tamS = false;
-            }
-            backStack.Push(new BACKDATA("s", S_Slider.Value));
-
-
-            PrintBackStack();
-
-
+         
         }
 
         private void OK_V_Click(object sender, RoutedEventArgs e)
         {
 
-            BACKDATA topData;
-
-            if (backStack.Count() == 0)
-            {
-                topData = new BACKDATA("v", -1);
-            }
-            else
-            {
-                topData = backStack.Peek();
-            }
-
-
-            double TextBoxVValue = double.Parse(V_Slider_Value.Text);
-            TextBoxVValue = Math.Round(TextBoxVValue);
-
-            double SliderVValue = Math.Round(V_Slider.Value);
-
-            if (topData.labels == "v" && topData.values == V_Slider.Value && SliderVValue == TextBoxVValue)
-            {
-                return;
-            }
-
-
-            if (tamV == true)
-            {
-                backStack.Push(new BACKDATA("v", 0));
-                tamV = false;
-            }
-            backStack.Push(new BACKDATA("v", V_Slider.Value));
-
-            PrintBackStack();
 
         }
 
         private void V_Slider_PreviewMouseUp(object sender, MouseButtonEventArgs e)
         {
-
-
-            if (tamV == true)
-            {
-                backStack.Push(new BACKDATA("v", 0));
-                tamV = false;
-            }
-            backStack.Push(new BACKDATA("v", V_Slider.Value));
-
-
-            PrintBackStack();
-
         }
 
         //-------------------------------------------------------------------------------------------------------------------------------------- 
@@ -1643,6 +1668,8 @@ namespace GIAO_DIEN
                 await channelValues.Writer.WriteAsync(command, CancellationToken.None);
 
                 Sens_Value.Text = Sens_Slider.Value.ToString();
+
+                Console.WriteLine("----segment fasle-----");
             }
 
             if (SegmentActivated == true)
@@ -1654,6 +1681,7 @@ namespace GIAO_DIEN
                 await channelValues.Writer.WriteAsync(command, CancellationToken.None);
 
                 Sens_Value.Text = Sens_Slider.Value.ToString();
+                Console.WriteLine("----segment true-----");
             }
          
 
@@ -1862,7 +1890,7 @@ namespace GIAO_DIEN
 
         //-------------------------------------------- POSITION MOUSE ------------------------------------------------------------------
 
-        private void AddSegmentBtn_Click(object sender, RoutedEventArgs e)
+        private void SegmentBtn_Click(object sender, RoutedEventArgs e)
         {
             SegmentActivated = true;
         }
@@ -1885,156 +1913,193 @@ namespace GIAO_DIEN
         }
 
 
+        private void DrawPolies()
+        {
+            SolidColorBrush brush = new SolidColorBrush();
+            brush.Color = Colors.Black;
 
-        List<PositionMouse> positionMouses = new List<PositionMouse>();
-        Polyline polyline = new Polyline();
-        Rectangle smallDots = new Rectangle();
-       
+            
+
+
+            var willBeRemovedItems = new List<UIElement>();
+            //[0 1 2 ]
+            //children 0
+            foreach(var item in Canvas_On_ImgScreen.Children)
+            {
+                if (item is Polyline || item is Rectangle )
+                {
+                    willBeRemovedItems.Add((UIElement)item);
+                }
+            }
+
+            foreach(var item in willBeRemovedItems)
+            {
+                Canvas_On_ImgScreen.Children.Remove(item);
+            }
+
+
+            for(int i = 0; i < backStack.Count; i++)
+            {
+                if (backStack.ElementAt(i) is PolyBackAction)
+                {
+                    PolyBackAction StarterPoly = (PolyBackAction)backStack.ElementAt(i);
+                    int starterPolyName = StarterPoly.polyName;
+
+                    int sameNameStarterPolyIndex = i;
+
+                    PointCollection polygonPoints = new PointCollection();
+                    Polyline polyline = new Polyline();
+
+                    polyline.Stroke = brush;
+                    polyline.StrokeThickness = 2;
+
+                    while (
+                        sameNameStarterPolyIndex < backStack.Count &&
+                        backStack.ElementAt(sameNameStarterPolyIndex) is PolyBackAction
+                        )
+                    {
+                        PolyBackAction currentPolyBackAction = (PolyBackAction)backStack.ElementAt(sameNameStarterPolyIndex);
+                        if (currentPolyBackAction.polyName != starterPolyName)
+                        {
+                            break;
+                        }
+
+                        //
+                        Rectangle smallDot = new Rectangle()
+                        {
+                            Fill = System.Windows.Media.Brushes.Red,
+                            Width = 5,
+                            Height = 5
+                        };
+                        Canvas.SetLeft(smallDot, currentPolyBackAction.mouseX);
+                        Canvas.SetTop(smallDot, currentPolyBackAction.mouseY);
+                        Canvas_On_ImgScreen.Children.Add(smallDot);
+
+                        polygonPoints.Add(new System.Windows.Point(currentPolyBackAction.mouseX, currentPolyBackAction.mouseY));
+
+                        sameNameStarterPolyIndex++;
+                    }
+
+                    polygonPoints.Add(polygonPoints.First());
+
+                    polyline.Points = polygonPoints;
+                    
+                    Canvas_On_ImgScreen.Children.Add(polyline);
+
+                    i = sameNameStarterPolyIndex - 1; //IMPORTANT!!
+                }
+
+            }
+
+
+        }
+   
+        int currentPolyName = 1;
 
         private void TopCanvas_MouseDown(object sender, MouseButtonEventArgs e)
         {
 
             if (SegmentActivated == true && getPosByClickEnable == true)
             {
-                var positionMousesCur = new PositionMouse(positionMouseX, positionMouseY);
-                positionMouses.Add(positionMousesCur);
 
-                foreach (var item in positionMouses)
-                {
-                    Console.WriteLine(item);
-                }
-                Console.WriteLine("++++++++++++++++++");
+                //var positionMousesCur = new PositionMouse(positionMouseX, positionMouseY);
+                //polyPoints.Add(positionMousesCur);
 
-                SolidColorBrush brush = new SolidColorBrush();
-                brush.Color = Colors.Black;
+                PolyBackAction polyBackAction = new PolyBackAction();
+                polyBackAction.polyName = currentPolyName;
+                polyBackAction.mouseX = positionMouseX;
+                polyBackAction.mouseY = positionMouseY;
 
-                PointCollection polygonPoints = new PointCollection();
-                polyline.Stroke = brush;
-                polyline.StrokeThickness = 2;
+                backStack.Push(polyBackAction);
 
-                smallDots = new Rectangle()
-                {
-                    Fill = System.Windows.Media.Brushes.Red,
-                    Width = 5,
-                    Height = 5
-                };
+                PrintBackStack();
 
-                if (positionMouses.Count() > 0)
-                {
-                    //foreach (PositionMouse items in positionMouses)
-                    //{
-                    //    Canvas.SetLeft(smallDot, items.posx);
-                    //    Canvas.SetTop(smallDot, items.posy);
-
-                    //    var p = new System.Windows.Point(items.posx, items.posy);
-                    //    polygonPoints.Add(p);
-
-                    //}  
-                    for (int i = 0; i < positionMouses.Count(); i++)
-                    {
-                        Canvas.SetLeft(smallDots, positionMouses[i].posx);
-                        Canvas.SetTop(smallDots, positionMouses[i].posy);
-
-                        polygonPoints.Add(new System.Windows.Point(positionMouses[i].posx, positionMouses[i].posy));
-                    }
-                    polygonPoints.Add(new System.Windows.Point(positionMouses[0].posx, positionMouses[0].posy));
-
-
-                    if (Canvas_On_ImgScreen.Children.Count > 0)
-                    {
-                        Canvas_On_ImgScreen.Children.RemoveAt(Canvas_On_ImgScreen.Children.Count - 1);
-                        polyline.Points = polygonPoints;
-                        
- 
-                    }
-                   
-
-                }
-                //ImgScreen_Canvas.Children.Add(smallDots);
-                Canvas_On_ImgScreen.Children.Add(smallDots);
-                Canvas_On_ImgScreen.Children.Add(polyline);
+                DrawPolies();
             }
         }
 
-        //--------------------------------- BUG: khong the xoa smallDot ---------------------------------------------
+        //--------------------------------- BUG ---------------------------------------------
         Mat ImgAfterSecment;
-        
         private void SendCropImgBtn_Click(object sender, RoutedEventArgs e)
         {
+                       
+            //ImgAfterSecment = new Mat();
+
+            ////List<PositionMouseInImgSource> positionMousesInImgSoucre = new List<PositionMouseInImgSource>();
+            ////double[][] positionArray = new double[positionMouses.Count + 1][];
+
+            //double scaleRatio = 6.5;
+            //OpenCvSharp.Point[] position = new OpenCvPoint[polyPoints.Count];
+            //for (int i = 0; i < polyPoints.Count; i++)
+            //{
+            //    position[i] = new OpenCvPoint((int)(polyPoints[i].posx * scaleRatio), (int)(polyPoints[i].posy * scaleRatio));
+            //}
             
-            
-            ImgAfterSecment = new Mat();
-            List<PositionMouseInImgSource> positionMousesInImgSoucre = new List<PositionMouseInImgSource>();
+            ////LineTypes line = new LineTypes();
+            //Mat blackMask = new Mat(SourceImg.Height, SourceImg.Width, MatType.CV_8UC3, Scalar.Black);
+            //Cv2.FillPoly(blackMask, new OpenCvSharp.Point[][] { position}, Scalar.All(255));
+            //Cv2.BitwiseAnd(SourceImg, blackMask, ImgAfterSecment);
+            //var imgAferSecmented = Convert(BitmapConverter.ToBitmap(ImgAfterSecment));
+            //ImgScreen.Source = imgAferSecmented;
 
-            double[][] positionArray = new double[positionMouses.Count + 1][];
-            double scaleRatio = 6.5;
-            OpenCvSharp.Point[] position = new OpenCvSharp.Point[positionMouses.Count];
-            for (int i = 0; i < positionMouses.Count; i++)
-            {
-                position[i] = new OpenCvSharp.Point((int)(positionMouses[i].posx * scaleRatio), (int)(positionMouses[i].posy * scaleRatio));
-            }
-            
-            LineTypes line = new LineTypes();
-            Mat blackMask = new Mat(SourceImg.Height, SourceImg.Width, MatType.CV_8UC3, Scalar.Black);
-            Cv2.FillPoly(blackMask, new OpenCvSharp.Point[][] { position}, Scalar.All(255));
-            Cv2.BitwiseAnd(SourceImg, blackMask, ImgAfterSecment);
-            var imgAferSecmented = Convert(BitmapConverter.ToBitmap(ImgAfterSecment));
-            ImgScreen.Source = imgAferSecmented;
-
-            var saveFileName = "imgcanvas.jpg";
-            ImgAfterSecment.SaveImage(saveFileName);          
-            SourceImgSegment = Directory.GetCurrentDirectory() + "\\" + saveFileName;
-
-            Canvas_On_ImgScreen.Children.Clear();     
-
-
-            // Cv2.FillPoly()
-
-            //double[] positionArray = positionMousesInImgSoucre.ToArray();
-
-            //Mat MatThreshold = new Mat();
-            //Mat gray = new Mat();
-            //Mat maskSecmentMat = new Mat(SourceImg.Height, SourceImg.Width, MatType.CV_8UC3, Scalar.Black);
-            //RenderTargetBitmap renderBitmap = new RenderTargetBitmap((int)Canvas_On_ImgScreen.ActualWidth, (int)Canvas_On_ImgScreen.ActualHeight, 96d, 96d, System.Windows.Media.PixelFormats.Pbgra32);
-            //renderBitmap.Render(ImgScreen_Canvas);
-
-            //BitmapEncoder encoder = new PngBitmapEncoder(); 
-            //encoder.Frames.Add(BitmapFrame.Create(renderBitmap));
             //var saveFileName = "imgcanvas.jpg";
-            //encoder.Save(new FileStream(Directory.GetCurrentDirectory() + "\\" + saveFileName, FileMode.Create));
+            //ImgAfterSecment.SaveImage(saveFileName);          
+            //SourceImgSegment = Directory.GetCurrentDirectory() + "\\" + saveFileName;
 
-            //SourceImgSec = Cv2.ImRead(Directory.GetCurrentDirectory() + "\\" + saveFileName);
-
-            //Point[] scaledpoints = new Point[positionMouses.Count()];
-
-            //Polygon scaledPolygon = new Polygon(scaledpoints);
-
-            //Mat mat = new Mat(SourceImg.Height, SourceImg.Width, DepthType.Cv8U, 1);
-            //mat.SetTo(new MCvScalar(255)); // Đặt tất cả các điểm ảnh màu trắng
-            //Point[][] contours = new Point[1][] { scaledPolygon.Points };
-            //CvInvoke.FillPoly(mat, contours, new MCvScalar(0)); //
-
-            //Cv2.ImShow("dssd", SourceImgSec);
-            //Cv2.CvtColor(SourceImgSec, gray, ColorConversionCodes.BGR2GRAY);
-
-            //Cv2.Threshold(gray, MatThreshold, Thresh_Slider.Value, 255, ThresholdTypes.Binary);
-            //Cv2.ImShow("my img", MatThreshold);
-
-            //OpenCvSharp.Point[][] contours;
-            //HierarchyIndex[] hierarchy;
-
-            //Cv2.FindContours(MatThreshold, out contours, out hierarchy, RetrievalModes.List, ContourApproximationModes.ApproxNone);
-            //Cv2.ImShow("fdbfjs",MatThreshold);
-            //Mat mask = new Mat(SourceImgSec.Size(), MatType.CV_8UC1, 0);
-            //Cv2.FillPoly(mask, contours, Scalar.All(255));
-
-            //Mat result = new Mat();
-            //SourceImg.CopyTo(result, mask);
-            //Cv2.ImShow("Result", result);
+            //Canvas_On_ImgScreen.Children.Clear();     
 
 
+            //// Cv2.FillPoly()
+
+            ////double[] positionArray = positionMousesInImgSoucre.ToArray();
+
+            ////Mat MatThreshold = new Mat();
+            ////Mat gray = new Mat();
+            ////Mat maskSecmentMat = new Mat(SourceImg.Height, SourceImg.Width, MatType.CV_8UC3, Scalar.Black);
+            ////RenderTargetBitmap renderBitmap = new RenderTargetBitmap((int)Canvas_On_ImgScreen.ActualWidth, (int)Canvas_On_ImgScreen.ActualHeight, 96d, 96d, System.Windows.Media.PixelFormats.Pbgra32);
+            ////renderBitmap.Render(ImgScreen_Canvas);
+
+            ////BitmapEncoder encoder = new PngBitmapEncoder(); 
+            ////encoder.Frames.Add(BitmapFrame.Create(renderBitmap));
+            ////var saveFileName = "imgcanvas.jpg";
+            ////encoder.Save(new FileStream(Directory.GetCurrentDirectory() + "\\" + saveFileName, FileMode.Create));
+
+            ////SourceImgSec = Cv2.ImRead(Directory.GetCurrentDirectory() + "\\" + saveFileName);
+
+            ////Point[] scaledpoints = new Point[positionMouses.Count()];
+
+            ////Polygon scaledPolygon = new Polygon(scaledpoints);
+
+            ////Mat mat = new Mat(SourceImg.Height, SourceImg.Width, DepthType.Cv8U, 1);
+            ////mat.SetTo(new MCvScalar(255)); // Đặt tất cả các điểm ảnh màu trắng
+            ////Point[][] contours = new Point[1][] { scaledPolygon.Points };
+            ////CvInvoke.FillPoly(mat, contours, new MCvScalar(0)); //
+
+            ////Cv2.ImShow("dssd", SourceImgSec);
+            ////Cv2.CvtColor(SourceImgSec, gray, ColorConversionCodes.BGR2GRAY);
+
+            ////Cv2.Threshold(gray, MatThreshold, Thresh_Slider.Value, 255, ThresholdTypes.Binary);
+            ////Cv2.ImShow("my img", MatThreshold);
+
+            ////OpenCvSharp.Point[][] contours;
+            ////HierarchyIndex[] hierarchy;
+
+            ////Cv2.FindContours(MatThreshold, out contours, out hierarchy, RetrievalModes.List, ContourApproximationModes.ApproxNone);
+            ////Cv2.ImShow("fdbfjs",MatThreshold);
+            ////Mat mask = new Mat(SourceImgSec.Size(), MatType.CV_8UC1, 0);
+            ////Cv2.FillPoly(mask, contours, Scalar.All(255));
+
+            ////Mat result = new Mat();
+            ////SourceImg.CopyTo(result, mask);
+            ////Cv2.ImShow("Result", result);
 
 
+
+
+        }
+        private void AddSegmentBtn_Click(object sender, RoutedEventArgs e)
+        {
+            currentPolyName++; //tang poly name de quy dinh no la poly khac
         }
 
     }

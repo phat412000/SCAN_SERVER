@@ -22,8 +22,8 @@ namespace GIAO_DIEN
     /// </summary>
     public partial class UserControl1 : UserControl
     {
-        MainWindow m;
-        public event FireEventForScanSuccess FireEventForScanSuccess = null;
+        //MainWindow m;
+        //public event FireEventForScanSuccess FireEventForScanSuccess = null;
         public UserControl1()
         {
             InitializeComponent();

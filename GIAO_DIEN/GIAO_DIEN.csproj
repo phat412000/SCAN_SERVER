@@ -143,10 +143,17 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="AppConstraint.cs" />
+    <Compile Include="backActionChild\DistanceBackAction.cs" />
+    <Compile Include="backActionChild\ImageBackAction.cs" />
+    <Compile Include="backActionChild\PolyBackAction.cs" />
+    <Compile Include="backActionChild\ThreshBackAction.cs" />
+    <Compile Include="backActionValues\BackActionValue.cs" />
+    <Compile Include="backActionValues\SingleValueAction.cs" />
     <Compile Include="BacteriaCenter.cs" />
     <Compile Include="GloblalV.cs" />
     <Compile Include="PositionMouse.cs" />
     <Compile Include="PositionMouseInImgSource.cs" />
+    <Compile Include="PolyPosition.cs" />
     <Compile Include="PythonInterfaces\PythonInterface.cs" />
     <Compile Include="Converter.cs" />
     <Compile Include="UserControl1.xaml.cs">
@@ -163,7 +170,7 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="BACKDATA.cs" />
+    <Compile Include="BackAction.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>

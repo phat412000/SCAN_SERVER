@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 
 namespace GIAO_DIEN
 {
-    class PositionMouse
+    class PolyPosition
     {
         public double posx { get; set; }
         public double posy { get; set; }
 
-        public PositionMouse(double x, double y)
+        public PolyPosition(double x, double y)
         {
             posx = x;
             posy = y;
