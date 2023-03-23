@@ -10,19 +10,16 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.IO;
 using OpenCvSharp;
-
 using OpenCvSharp.Extensions;
 using System.Windows.Threading;
 using Window = System.Windows.Window;
 using System.Threading;
 using Basler.Pylon;
-
 using Pythonzxrr;
 using OpenCvSharp.WpfExtensions;
 using Microsoft.Win32;
 using System.Threading.Channels;
 using Rectangle = System.Windows.Shapes.Rectangle;
-//using System.Drawing;
 using OpenCvPoint = OpenCvSharp.Point;
 using GIAO_DIEN.backActionChild;
 
@@ -37,15 +34,11 @@ namespace GIAO_DIEN
         int ButtonFile_Click_Mode = 0;
         string SelectImgPath;
         Mat SourceImg;
-        Mat SourceImg_copyForSegment;
         Mat ImgAfterAddMask;
         int ZoomInRatio;
         int ZoomOutRatio;
         bool AutoMode = false;
         bool ManualMode = false;
-
-
-
 
         //Stack<double> mystackValues = new Stack<double>();
         //Stack<string> mystackLabels = new Stack<string>();
@@ -54,8 +47,6 @@ namespace GIAO_DIEN
 
         Stack<BackAction> backStack = new Stack<BackAction>();
         Stack<BackAction> nextStack = new Stack<BackAction>();
-
-
 
         private double cropX = 0;
         private double cropY = 0;
@@ -76,8 +67,6 @@ namespace GIAO_DIEN
 
         string curLabel;
         double curValue;
-        //string a;
-        //object b;
         bool tempThresh = true;
         bool tempDistance = true;
         bool tamH = true;
@@ -85,7 +74,6 @@ namespace GIAO_DIEN
         bool tamV = true;
         bool tempConfirm = true;
         bool tempSend = true;
-        bool SendActivated = false;
         bool DistanceEnable = false;
         bool ThreshEnable = false;
 
@@ -93,8 +81,6 @@ namespace GIAO_DIEN
         bool SegmentActivated = false;
 
 
-        //int zoomX = 0;
-        //  PixelDataConverter converter = new PixelDataConverter();
         private DispatcherTimer Timer1;
         private int time = 0;
         PythonInterface pythonInterface;
@@ -103,26 +89,24 @@ namespace GIAO_DIEN
 
         public WindowStart()
         {
-
             InitializeComponent();
             ButtonFile_canvas.Visibility = Visibility.Hidden;
             AutoScreen.Visibility = Visibility.Hidden;
             ManualScreen.Visibility = Visibility.Hidden;
             WelcomeScreen.Visibility = Visibility.Visible;
 
-            //test.Background = imgBrush;
-
             pythonInterface = new PythonInterface();
             pythonInterface.Connect();
 
             Task.Run(SliderValueConsumerAsync);
-            //Task.Run(TotalValueConsumerAsync);
-
         }
+
+
         private string _datetime;
         private string _barcode;
         public WindowStart(string datetime, string barcode) : this()
         {
+
             _datetime = datetime;
             DateTime_Textbox.Text = _datetime;
             _barcode = barcode;
@@ -139,13 +123,11 @@ namespace GIAO_DIEN
 
         }
 
-
         private String generateFilename()
         {
+
             Random rand = new Random();
 
-            // Choosing the size of string
-            // Using Next() string
             int stringlen = rand.Next(4, 10);
             int randValue;
             string str = "";
@@ -153,14 +135,10 @@ namespace GIAO_DIEN
             for (int i = 0; i < stringlen; i++)
             {
 
-                // Generating a random number.
                 randValue = rand.Next(0, 26);
 
-                // Generating random character by converting
-                // the random number into character.
                 letter = System.Convert.ToChar(randValue + 65);
 
-                // Appending the letter to string.
                 str = str + letter;
 
             }
@@ -170,9 +148,11 @@ namespace GIAO_DIEN
 
         private void FileButton_Click(object sender, RoutedEventArgs e)
         {
-            ButtonFile_Click_Mode += 1; //really
+            ButtonFile_Click_Mode += 1; 
+
             if (ButtonFile_Click_Mode == 1)
             {
+
                 ButtonFile_canvas.Visibility = Visibility.Visible;
                 SolidColorBrush color = new SolidColorBrush();
                 color.Color = Colors.White;
@@ -180,20 +160,24 @@ namespace GIAO_DIEN
                 SolidColorBrush Foreground_color = new SolidColorBrush();
                 Foreground_color.Color = System.Windows.Media.Color.FromRgb(3, 102, 169);
                 FileButton.Foreground = Foreground_color;
+
             }
             if (ButtonFile_Click_Mode == 2)
             {
+
                 ButtonFile_canvas.Visibility = Visibility.Hidden;
                 ButtonFile_Click_Mode = 0;
                 FileButton.Background = null;
                 SolidColorBrush Foreground_color = new SolidColorBrush();
                 Foreground_color.Color = Colors.White;
                 FileButton.Foreground = Foreground_color;
+
             }
         }
 
         private void Zoom_in_Click(object sender, RoutedEventArgs e)
         {
+
             ZoomInRatio += 1;
             ZoomOutRatio -= 1;
             System.Windows.Media.Matrix mat = ImgScreen.RenderTransform.Value;
@@ -202,10 +186,12 @@ namespace GIAO_DIEN
             MatrixTransform mtf = new MatrixTransform(mat);
             ImgScreen.RenderTransform = mtf;
             Canvas_On_ImgScreen.RenderTransform = mtf;
+
         }
 
         private void Zoom_out_Click(object sender, RoutedEventArgs e)
         {
+
             ZoomOutRatio += 1;
             ZoomInRatio -= 1;
             System.Windows.Media.Matrix mat = ImgScreen.RenderTransform.Value;
@@ -214,14 +200,15 @@ namespace GIAO_DIEN
             MatrixTransform mtf = new MatrixTransform(mat);
             ImgScreen.RenderTransform = mtf;
             Canvas_On_ImgScreen.RenderTransform = mtf;
-            //S_Slider_Value.Text = "in: " + ZoomInRatio.ToString();
-            //V_Slider_Value.Text = "out: " + ZoomOutRatio.ToString();
+
         }
 
         private void Fit_to_screen_btn_click(object sender, RoutedEventArgs e)
         {
+
             if (ZoomInRatio > 0)
             {
+
                 System.Windows.Media.Matrix mat = ImgScreen.RenderTransform.Value;
                 System.Windows.Media.Matrix matCanvas = ImgScreen_Canvas.RenderTransform.Value;
                 mat.ScaleAtPrepend(Math.Pow(1 / 1.1, ZoomInRatio), Math.Pow(1 / 1.1, ZoomInRatio), 0, 0);
@@ -231,8 +218,10 @@ namespace GIAO_DIEN
                 ZoomInRatio = 0;
                 ZoomOutRatio = 0;
             }
+
             if (ZoomOutRatio > 0)
             {
+
                 System.Windows.Media.Matrix mat = ImgScreen.RenderTransform.Value;
                 System.Windows.Media.Matrix matCanvas = ImgScreen_Canvas.RenderTransform.Value;
                 mat.ScaleAtPrepend(Math.Pow(1.1, ZoomOutRatio), Math.Pow(1.1, ZoomOutRatio), 0, 0);
@@ -241,7 +230,9 @@ namespace GIAO_DIEN
                 Canvas_On_ImgScreen.RenderTransform = mtf;
                 ZoomOutRatio = 0;
                 ZoomInRatio = 0;
+
             }
+
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
@@ -252,15 +243,18 @@ namespace GIAO_DIEN
 
         private void OpenFile()
         {
+
             OpenFileDialog openFileDialog = new OpenFileDialog();
             openFileDialog.Title = "Select Image";
             openFileDialog.Filter = "Image files (*.png;*.jpeg;*jpg;*bmp)|*.png;*.jpeg;*jpg;*bmp|All files (*.*)|*.*";
             openFileDialog.FilterIndex = 1;
-            //openFileDialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+
             if (openFileDialog.ShowDialog() == false)
             { MessageBox.Show("fail to show"); }
+
             if (openFileDialog.FileName != "")
             {
+
                 SelectImgPath = openFileDialog.FileName;
 
                 SourceImg = Cv2.ImRead(SelectImgPath);
@@ -274,12 +268,10 @@ namespace GIAO_DIEN
                 Canvas_On_ImgScreen.Width = SourceImg.Width / 6.5;
                 Canvas_On_ImgScreen.Height = SourceImg.Height / 6.5;
 
-
-
                 ImgScreen.Source = bitmap;
 
-
             }
+
             ButtonFile_canvas.Visibility = Visibility.Hidden;
             ButtonFile_Click_Mode = 0;
             FileButton.Background = null;
@@ -289,14 +281,14 @@ namespace GIAO_DIEN
 
             currentImagePath = SelectImgPath;
 
-
-
         }
+
         private void OpenFileButton_Click(object sender, RoutedEventArgs e)
         {
             OpenFile();
 
         }
+
         private void MenuFileOpenBtn_Click(object sender, RoutedEventArgs e)
         {
             OpenFile();
@@ -333,17 +325,20 @@ namespace GIAO_DIEN
 
         private void ExitAutoScreen_Click(object sender, RoutedEventArgs e)
         {
+
             AutoScreen.Visibility = Visibility.Hidden;
             ManualScreen.Visibility = Visibility.Hidden;
             WelcomeScreen.Visibility = Visibility.Visible;
+
         }
 
         private void ExitManualScreen_Click(object sender, RoutedEventArgs e)
         {
-            //ManualMode = false;
+
             AutoScreen.Visibility = Visibility.Hidden;
             ManualScreen.Visibility = Visibility.Hidden;
             WelcomeScreen.Visibility = Visibility.Visible;
+
         }
 
 
@@ -356,8 +351,10 @@ namespace GIAO_DIEN
         double Widthsize90;
         private void Size90mm_Checked(object sender, RoutedEventArgs e)
         {
+
             circleCheck = true;
             if (circleCheck == true)
+
             {
                 size90mm.IsChecked = true;
                 RectangleCheck = false;
@@ -372,16 +369,17 @@ namespace GIAO_DIEN
                 centerCircleY = SourceImg.Height / 2 / 6.5;
                 Ellipse ACircle = new Ellipse()
                 {
+
                     Height = Heightsize90,
                     Width = Widthsize90,
                     Stroke = System.Windows.Media.Brushes.LightGreen,
                     StrokeThickness = 3,
                     Fill = System.Windows.Media.Brushes.Transparent
+
                 };
 
                 double x = (Canvas_On_ImgScreen.ActualWidth / 2) - (ACircle.Width / 2);
                 double y = (Canvas_On_ImgScreen.ActualHeight / 2) - (ACircle.Height / 2);
-
 
                 Canvas.SetLeft(ACircle, x);
                 Canvas.SetTop(ACircle, y);
@@ -391,7 +389,6 @@ namespace GIAO_DIEN
 
                 Canvas_On_ImgScreen.Children.Clear();
                 Canvas_On_ImgScreen.Children.Add(ACircle);
-
 
                 cropX = x;
                 cropY = y;
@@ -409,18 +406,21 @@ namespace GIAO_DIEN
                 Canvas_On_ImgScreen.Children.Add(textBlockSize);
 
                 Console.WriteLine(Canvas_On_ImgScreen.Width);
+
             }
-
-
         }
+
         private void size90mm_Unchecked(object sender, RoutedEventArgs e)
         {
+
             circleCheck = false;
             if (circleCheck == false)
             {
                 size90mm.IsChecked = false;
                 Canvas_On_ImgScreen.Children.Clear();
+
             }
+
         }
 
 
@@ -450,7 +450,6 @@ namespace GIAO_DIEN
             double x = (Canvas_On_ImgScreen.ActualWidth / 2) - (ACircle.Width / 2);
             double y = (Canvas_On_ImgScreen.ActualHeight / 2) - (ACircle.Height / 2);
 
-
             Canvas.SetLeft(ACircle, x);
             Canvas.SetTop(ACircle, y);
             ACircle.Tag = "C" + (Canvas_On_ImgScreen.Children.Count - 1).ToString();
@@ -473,10 +472,12 @@ namespace GIAO_DIEN
             Canvas.SetLeft(textBlockSize, x + 80);
             Canvas.SetTop(textBlockSize, y - 25);
             Canvas_On_ImgScreen.Children.Add(textBlockSize);
+
         }
 
         private void Size150mm_Checked(object sender, RoutedEventArgs e)
         {
+
             circleCheck = true;
             RectangleCheck = false;
             float Heightsize150 = 430;
@@ -523,6 +524,7 @@ namespace GIAO_DIEN
             Canvas.SetLeft(textBlockSize, x + 80);
             Canvas.SetTop(textBlockSize, y - 25);
             Canvas_On_ImgScreen.Children.Add(textBlockSize);
+
         }
         private void ACircle_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
@@ -539,6 +541,7 @@ namespace GIAO_DIEN
 
         private void Size150x300mm_Checked(object sender, RoutedEventArgs e)
         {
+
             circleCheck = false;
             RectangleCheck = true;
             size100mm.IsChecked = false;
@@ -577,10 +580,12 @@ namespace GIAO_DIEN
             Canvas.SetLeft(textBlockSize, x);
             Canvas.SetTop(textBlockSize, y - 25);
             Canvas_On_ImgScreen.Children.Add(textBlockSize);
+
         }
 
         private void Size200x300mm_Checked(object sender, RoutedEventArgs e)
         {
+
             circleCheck = false;
             RectangleCheck = true;
             size100mm.IsChecked = false;
@@ -620,30 +625,30 @@ namespace GIAO_DIEN
             Canvas.SetLeft(textBlockSize, x);
             Canvas.SetTop(textBlockSize, y - 25);
             Canvas_On_ImgScreen.Children.Add(textBlockSize);
+
         }
 
 
         private void ARectangle_PreviewMouseLeftButtonDown1(object sender, MouseButtonEventArgs e)
         {
+
             Total_Count_Value.Text = DragStartPoint.X.ToString();
             Rectangle r = sender as Rectangle;
             DragStartPoint.X = e.GetPosition(this).X;
 
             DragStartPoint.Y = e.GetPosition(this).Y;
-            //XminRectangle = (int)DragStartPoint.X;
-            //YminRectangle = (int)DragStartPoint.Y;
-            //Console.WriteLine(DragStartPoint.X);
 
             ObjectStartLocation.X = Canvas.GetLeft(r);
             ObjectStartLocation.Y = Canvas.GetTop(r);
 
             ClickedObject = r;
+
         }
 
 
         private void Canvas_On_ImgScreen_PreviewMouseMove(object sender, MouseEventArgs e)
         {
-            //Camera_Check_TBlock.Text = "X: " + e.GetPosition(this).X.ToString() + "," + "Y: " + e.GetPosition(this).Y.ToString();
+ 
             if (ClickedObject == null)
                 return;
 
@@ -653,9 +658,9 @@ namespace GIAO_DIEN
             double deltaX = DragEndPoint.X - DragStartPoint.X;
             double deltaY = DragEndPoint.Y - DragStartPoint.Y;
 
-
             if (ClickedObject is Rectangle)
             {
+
                 Rectangle r = ClickedObject as Rectangle;
 
                 Canvas.SetLeft(r, ObjectStartLocation.X + deltaX);
@@ -666,7 +671,7 @@ namespace GIAO_DIEN
             }
             else if (ClickedObject is Ellipse)
             {
-                //EllipseGeometry c = ClickedObject as EllipseGeometry;
+
                 Ellipse c = ClickedObject as Ellipse;
 
                 Canvas.SetLeft(c, ObjectStartLocation.X + deltaX);
@@ -678,8 +683,7 @@ namespace GIAO_DIEN
 
                 cropWidth = c.Width;
                 cropHeight = c.Height;
-                //centerCircleX = (int)(ObjectStartLocation.X + deltaX + radiusCircle);
-                //centerCircleY = (int)(ObjectStartLocation.Y + deltaY + radiusCircle);
+
             }
             else
                 return;
@@ -691,30 +695,30 @@ namespace GIAO_DIEN
 
             dragClickdown.X = e.GetPosition(ImgScreen).X;
             dragClickdown.Y = e.GetPosition(ImgScreen).Y;
-            //Total_Count_Value.Text = dragClickdown.X.ToString();
 
         }
+
+
+
         OpenCvSharp.Rect rectangle = new OpenCvSharp.Rect();
-
-
-
-
         private void Canvas_On_ImgScreen_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
 
             dragClickup.X = e.GetPosition(ImgScreen).X;
             dragClickup.Y = e.GetPosition(ImgScreen).Y;
+
             if (circleCheck == true)
             {
 
                 centerCircleX = (int)(centerCircleX + (dragClickup.X - dragClickdown.X));
                 centerCircleY = (int)(centerCircleY + (dragClickup.Y - dragClickdown.Y));
-                //Total_Count_Value.Text = dragClickup.X.ToString() + "  " + dragClickup.Y.ToString();
-                //H_Slider_Value.Text = dragClickup.X.ToString() + " - " + dragClickdown.X.ToString() + " = " + (dragClickup.X - dragClickdown.X).ToString();
+  
             }
+
             XminRectangle = XminRectangle + (int)(dragClickup.X - dragClickdown.X);
             YminRectangle = YminRectangle + (int)(dragClickup.Y - dragClickdown.Y);
             ClickedObject = null;
+
             if (RectangleCheck == true)
             {
                 rectangle = new OpenCvSharp.Rect
@@ -724,16 +728,12 @@ namespace GIAO_DIEN
                     Width = (int)W,
                     Height = (int)H
                 };
-                //H_Slider_Value.Text = XminRectangle.ToString();
-                //S_Slider_Value.Text = YminRectangle.ToString();
-                //V_Slider_Value.Text = W.ToString() + " " + H.ToString();
+
             }
         }
 
 
         //--------------------------------------------------------------------------------------------------------------------------------------
-
-
 
 
         private void ImgScreen_MouseUp(object sender, MouseButtonEventArgs e)
@@ -747,7 +747,8 @@ namespace GIAO_DIEN
 
 
         ///******************************************** COUNT *****************************************************************
-        //////
+
+
         private void CountBtn_Click(object sender, RoutedEventArgs e)
         {
             var command = PythonInterface.BuildCommand("count");
@@ -755,8 +756,10 @@ namespace GIAO_DIEN
             Total_Count_Value.Text = total;
 
         }
+
+
         ///********************  BIến bacteriaCenters chứa list center position của Bacterias    ***************************************************************************************
-        ///
+ 
         private void EditBtn_Click(object sender, RoutedEventArgs e)
         {
             var command = PythonInterface.BuildCommand("centers");
@@ -776,8 +779,7 @@ namespace GIAO_DIEN
 
         private void ConfirmBtn_Click(object sender, RoutedEventArgs e)
         {
-            
-            //
+                      
             if (tempConfirm == true)
             {
                 var imageActionInTam = new ImageBackAction();
@@ -812,13 +814,11 @@ namespace GIAO_DIEN
                 {
                     Mat blackMask = new Mat(SourceImg.Height, SourceImg.Width, MatType.CV_8UC3, Scalar.Black);
                     Cv2.Circle(blackMask, (int)(centerCircleX * 6.5), (int)(centerCircleY * 6.5), (int)radiusCircle / 2, Scalar.White, -1);
-                    //Cv2.FillPoly()
                     Cv2.BitwiseAnd(SourceImg, blackMask, ImgAfterAddMask);
                     var converted = Convert(BitmapConverter.ToBitmap(ImgAfterAddMask));
                     ImgScreen.Source = converted;
 
                     size90mm.IsChecked = false;
-
 
                     var saveFileName = "imgcropped.jpg";
                     Console.WriteLine(saveFileName);
@@ -845,10 +845,6 @@ namespace GIAO_DIEN
         //----------------------------------------------------------------------------------------------------------------------------------------
         private void ClearBtn_Click(object sender, RoutedEventArgs e)
         {
-            //ImgScreen_Canvas.Children.Remove(polyline);
-            //ImgScreen_Canvas.Children.Remove(smallDots);
-            //ImgScreen_Canvas.Children.Clear();
-
            
             Canvas_On_ImgScreen.Children.Clear();
 
@@ -878,9 +874,6 @@ namespace GIAO_DIEN
                 size150mm.IsChecked = false;
             }
 
-
-
-
         }
         //--------------------------------------------------------------------------------------------------------------------------------------
 
@@ -890,8 +883,6 @@ namespace GIAO_DIEN
         bool GrayScaleEnable = false;
         Mat GrayScaleImg;
         Mat HSVImg;
-
-
 
         private void ColorFilter_Enable_Checked(object sender, RoutedEventArgs e)
         {
@@ -903,8 +894,7 @@ namespace GIAO_DIEN
                 S_Slider.IsEnabled = true;
                 V_Slider.IsEnabled = true;
                 Cv2.CvtColor(SourceImg, HSVImg, ColorConversionCodes.BGR2HSV);
-                // Mat H = new Mat (SourceImg.Height, SourceImg.Width, )
-                //HSVImg(SourceImg.Height, SourceImg.Width) = new Mat(SourceImg.Height, SourceImg.Width, MatType.CV_8UC1, H_Slider.Value);
+ 
                 System.Drawing.Bitmap HSV = MatToBitmap(HSVImg);
                 var converted = Convert(BitmapConverter.ToBitmap(HSVImg));
                 ImgScreen.Source = converted;
@@ -928,8 +918,7 @@ namespace GIAO_DIEN
             GrayScaleEnable = false;
             if (GrayScaleEnable == false)
             {
-                GrayScaleImg = SourceImg;
-                //Cv2.CvtColor(SourceImg, GrayScaleImg, ColorConversionCodes.BGR2GRAY);
+                GrayScaleImg = SourceImg;           
                 var converted = Convert(BitmapConverter.ToBitmap(GrayScaleImg));
                 ImgScreen.Source = converted;
             }
@@ -1025,8 +1014,9 @@ namespace GIAO_DIEN
                 ImgScreen.Source = Convert(BitmapConverter.ToBitmap(ImgAfterSegment));
             }
 
-
         }
+
+
         private void Ena_Distance_Checked(object sender, RoutedEventArgs e)
         {
             DistanceEnable = true;
@@ -1087,8 +1077,9 @@ namespace GIAO_DIEN
 
             }
 
-
         }
+
+
 
         private void Ena_Distance_Unchecked(object sender, RoutedEventArgs e)
         {
@@ -1109,7 +1100,6 @@ namespace GIAO_DIEN
                 ImgScreen.Source = Convert(BitmapConverter.ToBitmap(ImgAfterSegment));
             }
 
-
         }
 
 
@@ -1128,7 +1118,6 @@ namespace GIAO_DIEN
         private void Back_Click(object sender, RoutedEventArgs e)
         {
   
-
             if (backStack.Count() != 0)
             {
 
@@ -1138,7 +1127,6 @@ namespace GIAO_DIEN
                     Console.WriteLine(item);
 
                 backStack.Pop(); 
-
 
                 if (backStack.Count() != 0)
                 {
@@ -1175,9 +1163,7 @@ namespace GIAO_DIEN
                             imageActionInTam.image = ImgScreen.Source as BitmapImage;
                             backStack.Push(imageActionInTam);
 
-
                         }
-
 
                     }
                     else if (dataPo is PolyBackAction)
@@ -1187,44 +1173,6 @@ namespace GIAO_DIEN
                         SelectTopPolyToDraw();
                         DrawPolies();
                     }
-
-
-
-
-                    //switch (dataPo.backActionLabel)
-                    //{
-                    //    case "thresh":
-                    //        Console.WriteLine("...............");
-                    //        Thresh_Slider.Value = dataPo.backActionValue;
-                    //        //foreach (var item in mystackValues)
-                    //        //    Console.WriteLine(item);
-                    //        //foreach (var item in mystackLabels)
-                    //        //    Console.WriteLine(item);
-                    //        break;
-                    //    case "local":
-                    //        Console.WriteLine("...............");
-                    //        Sens_Slider.Value = dataPo.backActionValue;
-                    //        break;
-                    //    case "confirm":
-                    //        SourceImg = Cv2.ImRead(SelectImgPath);
-
-                    //        BitmapImage bitmap = new BitmapImage();
-                    //        bitmap.BeginInit();
-                    //        bitmap.UriSource = new Uri(SelectImgPath);
-                    //        bitmap.EndInit();
-
-                    //        ImgScreen.Width = SourceImg.Width / 6.5;
-                    //        ImgScreen.Height = SourceImg.Height / 6.5;
-                    //        Canvas_On_ImgScreen.Width = SourceImg.Width / 6.5;
-                    //        Canvas_On_ImgScreen.Height = SourceImg.Height / 6.5;
-
-                    //        ImgScreen.Source = bitmap;
-
-                    //        Canvas_On_ImgScreen.Children.Clear();
-                    //        break;
-                    //    default:
-                    //        break;
-                    //}
                 }
                 else
                 {
@@ -1236,18 +1184,54 @@ namespace GIAO_DIEN
                     tamS = true;
                     tamV = true;
                     tempConfirm = true;
-                
+
                 }
 
+
+                //switch (dataPo.backActionLabel)
+                //{
+                //    case "thresh":
+                //        Console.WriteLine("...............");
+                //        Thresh_Slider.Value = dataPo.backActionValue;
+                //        //foreach (var item in mystackValues)
+                //        //    Console.WriteLine(item);
+                //        //foreach (var item in mystackLabels)
+                //        //    Console.WriteLine(item);
+                //        break;
+                //    case "local":
+                //        Console.WriteLine("...............");
+                //        Sens_Slider.Value = dataPo.backActionValue;
+                //        break;
+                //    case "confirm":
+                //        SourceImg = Cv2.ImRead(SelectImgPath);
+
+                //        BitmapImage bitmap = new BitmapImage();
+                //        bitmap.BeginInit();
+                //        bitmap.UriSource = new Uri(SelectImgPath);
+                //        bitmap.EndInit();
+
+                //        ImgScreen.Width = SourceImg.Width / 6.5;
+                //        ImgScreen.Height = SourceImg.Height / 6.5;
+                //        Canvas_On_ImgScreen.Width = SourceImg.Width / 6.5;
+                //        Canvas_On_ImgScreen.Height = SourceImg.Height / 6.5;
+
+                //        ImgScreen.Source = bitmap;
+
+                //        Canvas_On_ImgScreen.Children.Clear();
+                //        break;
+                //    default:
+                //        break;
+                //}
 
             }
 
             PrintBackStack();
         }
 
+
+
         private void Next_Click(object sender, RoutedEventArgs e)
         {
-
 
             if (nextStack.Count() != 0)
             {
@@ -1255,8 +1239,6 @@ namespace GIAO_DIEN
                 BackAction popData = nextStack.Pop();
 
                 backStack.Push(popData);
-
-
                 
                 if (popData is ThreshBackAction)
                 {
@@ -1323,16 +1305,16 @@ namespace GIAO_DIEN
                     //    default:
                     //        break;
 
-                    //}
-                
+                    //}               
 
             }
 
         }
 
+
+
         private void Thresh_Slider_PreviewMouseUp(object sender, MouseButtonEventArgs e)
-        {
-            
+        {          
 
             if (tempThresh == true)
             {
@@ -1365,7 +1347,7 @@ namespace GIAO_DIEN
             }
             else
             {
-                topData = backStack.Peek(); //distance
+                topData = backStack.Peek(); 
             }
 
 
@@ -1404,14 +1386,13 @@ namespace GIAO_DIEN
 
             PrintBackStack();
 
-
         }
+
 
 
         private void Sens_Slider_PreviewMouseUp(object sender, MouseButtonEventArgs e)
         {
             
-
             if (tempDistance == true)
             {
                 var distanceActionInLocal = new DistanceBackAction();
@@ -1431,11 +1412,13 @@ namespace GIAO_DIEN
 
         }
 
+
+
+
         private void OK_Sens_Click(object sender, RoutedEventArgs e)
         {
 
             BackAction topData;
-            //DistanceBackAction topData 
 
             if (backStack.Count() == 0)
             {
@@ -1446,17 +1429,15 @@ namespace GIAO_DIEN
             }
             else
             {
-                topData = backStack.Peek(); //threshBackAction
-
+                topData = backStack.Peek();
             }
-
 
             double TextBoxLocalValue = double.Parse(Sens_Value.Text);
             TextBoxLocalValue = Math.Round(TextBoxLocalValue);
 
             double SliderLocalValue = Math.Round(Sens_Slider.Value);
 
-            if (topData is DistanceBackAction && 
+            if (topData is DistanceBackAction &&
                 //topData.backActionValue == Sens_Slider.Value && 
                 SliderLocalValue == TextBoxLocalValue)
             {
@@ -1467,23 +1448,23 @@ namespace GIAO_DIEN
                 }
             }
 
-          
-
             if (tempDistance == true)
             {
                 var distanceActionInTamLocal = new DistanceBackAction();
-                distanceActionInTamLocal.value = 0; 
-                backStack.Push(distanceActionInTamLocal); 
-               
+                distanceActionInTamLocal.value = 0;
+                backStack.Push(distanceActionInTamLocal);
+
                 tempDistance = false;
             }
 
             var distanceActionSliderValue = new DistanceBackAction();
-            distanceActionSliderValue.value = Sens_Slider.Value; 
+            distanceActionSliderValue.value = Sens_Slider.Value;
             backStack.Push(distanceActionSliderValue);
 
             PrintBackStack();
         }
+
+
 
 
         private void OK_H_Click(object sender, RoutedEventArgs e)
@@ -1516,6 +1497,10 @@ namespace GIAO_DIEN
         {
         }
 
+
+
+
+
         //-------------------------------------------------------------------------------------------------------------------------------------- 
         private readonly Channel<string> channelValues = Channel.CreateBounded<string>(new BoundedChannelOptions(2)
         {
@@ -1523,7 +1508,6 @@ namespace GIAO_DIEN
         });
 
         // You'll need to start this consumer somewhere and observe it (via await) to ensure you see exceptions
-
 
 
         private void CommandCallbackEventDispatch(string command, Mat image)
@@ -1585,6 +1569,9 @@ namespace GIAO_DIEN
         }
 
 
+
+
+
         private async void Thresh_Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             if (SegmentActivated == false)
@@ -1603,10 +1590,11 @@ namespace GIAO_DIEN
                 await channelValues.Writer.WriteAsync(command, CancellationToken.None);
 
                 Thresh_Value.Text = Thresh_Slider.Value.ToString();
-            }
-           
-
+            }           
         }
+
+
+
 
         private async void Sens_Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
@@ -1635,8 +1623,10 @@ namespace GIAO_DIEN
                 Console.WriteLine("----segment true-----");
             }
          
-
         }
+
+
+
 
         private void H_Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
@@ -1847,11 +1837,13 @@ namespace GIAO_DIEN
         }
 
 
+
+
         int positionMouseX;
         int positionMouseY;
-
         private void TopCanvas_MouseMove(object sender, MouseEventArgs e)
         {
+
             if (SegmentActivated == true)
             {
                 positionMouseX = (int)e.GetPosition(ImgScreen_Canvas).X;
@@ -1861,12 +1853,14 @@ namespace GIAO_DIEN
 
                 getPosByClickEnable = true;
             }
+
         }
 
 
+
+
         int currentPolyName = 1;
-        List<PositionMouse> polyPoints = new List<PositionMouse>();
-        
+        List<PositionMouse> polyPoints = new List<PositionMouse>();   
         private void TopCanvas_MouseDown(object sender, MouseButtonEventArgs e)
         {
 
@@ -1887,15 +1881,12 @@ namespace GIAO_DIEN
 
                 DrawPolies();
 
-
             }
         }
 
         private void SelectTopPolyToDraw()
         {
-            //update currentPolyName = ; //tren cung cua stack
-            //current = 2 => current = 3
-            //top name = 3
+
             foreach(var backAction in backStack)
             {
                 if (backAction is PolyBackAction)
@@ -1906,6 +1897,7 @@ namespace GIAO_DIEN
                 }
             }
         }
+
 
 
         private void DeletePolylineAndRectangle()
@@ -1925,13 +1917,17 @@ namespace GIAO_DIEN
                 Canvas_On_ImgScreen.Children.Remove(item);
             }
         }
+
+
+
+
+
         private void DrawPolies()
         {
             SolidColorBrush brush = new SolidColorBrush();
             brush.Color = Colors.Black;
 
             DeletePolylineAndRectangle();
-
 
             for(int i = 0; i < backStack.Count; i++)
             {
@@ -1985,16 +1981,20 @@ namespace GIAO_DIEN
 
             }
 
-
         }
-//------------------------------------------------
+
+
+
+
+
+
+//-----------------------------------------------------------------------------------------------------------------
         private void CropPolies()
         {
 
             double scaleRatio = 6.5;
             ImgAfterSegment = new Mat();
             Mat blackMask = new Mat(SourceImg.Height, SourceImg.Width, MatType.CV_8UC3, Scalar.Black);
-
 
             for (int i = 0; i < backStack.Count; i++)
             {
@@ -2022,33 +2022,29 @@ namespace GIAO_DIEN
                         sameNameStarterPolyIndex++;
                     }
 
-
                     Cv2.FillPoly(blackMask, new OpenCvSharp.Point[][] { opencvPoints.ToArray() }, Scalar.All(255));
 
                     DeletePolylineAndRectangle();
 
                     i = sameNameStarterPolyIndex - 1;
-
                 }
-
             }
 
             Cv2.BitwiseAnd(SourceImg, blackMask, ImgAfterSegment);
 
-           
-
-
-
-
-
         }
 
 
-        //---------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+//-----------------------------------------------------------------------------------------------------------------------      
         Mat ImgAfterSegment;
         private void SendCropImgBtn_Click(object sender, RoutedEventArgs e)
         {
-            SendActivated = true;
             if (tempSend == true)
             {
                 var imageActionInLocal = new ImageBackAction();
@@ -2061,7 +2057,6 @@ namespace GIAO_DIEN
             imageActionInTam.image = ImgScreen.Source as BitmapImage;
             backStack.Push(imageActionInTam);
 
-
             CropPolies();
             PrintBackStack();
 
@@ -2072,14 +2067,18 @@ namespace GIAO_DIEN
             ImgAfterSegment.SaveImage(saveFileName);
             SourceImgSegment = Directory.GetCurrentDirectory() + "\\" + saveFileName;
 
- 
-            DeletePolylineAndRectangle();
-
+            DeletePolylineAndRectangle(); 
 
         }
+
+
+
+
+
+
         private void AddSegmentBtn_Click(object sender, RoutedEventArgs e)
         {
-            currentPolyName++; //tang poly name de quy dinh no la poly khac
+            currentPolyName++; 
         }
 
     }
