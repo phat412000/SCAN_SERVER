@@ -8,10 +8,10 @@ namespace GIAO_DIEN
 {
     class PositionMouse
     {
-        public double posx { get; set; }
-        public double posy { get; set; }
+        public int posx { get; set; }
+        public int posy { get; set; }
 
-        public PositionMouse(double x, double y)
+        public PositionMouse(int x, int y)
         {
             posx = x;
             posy = y;
