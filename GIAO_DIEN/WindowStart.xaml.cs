@@ -79,6 +79,7 @@ namespace GIAO_DIEN
 
         bool getPosByClickEnable = false;
         bool SegmentActivated = false;
+        bool ConfirmActivated = false;
 
 
         private DispatcherTimer Timer1;
@@ -779,15 +780,16 @@ namespace GIAO_DIEN
 
         private void ConfirmBtn_Click(object sender, RoutedEventArgs e)
         {
-                      
-            if (tempConfirm == true)
-            {
-                var imageActionInTam = new ImageBackAction();
-                imageActionInTam.image = ImgScreen.Source as BitmapImage;
-                backStack.Push(imageActionInTam);
-                
-                tempConfirm = false;
-            }
+
+            ConfirmActivated = true;
+
+            var imageActionInTam = new ImageBackAction();
+            imageActionInTam.image = ImgScreen.Source as BitmapImage;
+            backStack.Push(imageActionInTam);
+
+
+
+
 
             PrintBackStack();
             ImgAfterAddMask = new Mat();
@@ -841,11 +843,16 @@ namespace GIAO_DIEN
             var imageActionInOutside = new ImageBackAction();
             imageActionInOutside.image = ImgScreen.Source as BitmapImage;
             backStack.Push(imageActionInOutside);
+
+
         }
         //----------------------------------------------------------------------------------------------------------------------------------------
         private void ClearBtn_Click(object sender, RoutedEventArgs e)
         {
-           
+
+            backStack.Clear();
+            nextStack.Clear();
+
             Canvas_On_ImgScreen.Children.Clear();
 
             ImgScreen.Source = null;
@@ -998,7 +1005,7 @@ namespace GIAO_DIEN
         private void Ena_Threshold_Unchecked(object sender, RoutedEventArgs e)
         {
             ThreshEnable = false;
-            if (ThreshEnable == false)
+            if (ThreshEnable == false && ConfirmActivated == true)
             {
                 Thresh_Slider.IsEnabled = false;
                 Ena_Threshold.IsChecked = false;
@@ -1084,13 +1091,62 @@ namespace GIAO_DIEN
         private void Ena_Distance_Unchecked(object sender, RoutedEventArgs e)
         {
             DistanceEnable = false;
-            if (DistanceEnable == false)
+            if (DistanceEnable == false && ConfirmActivated == true)
             {
                 Sens_Slider.IsEnabled = false;
                 Ena_Distance.IsChecked = false;
 
-                ImgScreen.Source = Convert(BitmapConverter.ToBitmap(ImgAfterAddMask));
+                var thresholdRoundValue = Math.Round(Thresh_Slider.Value);
+                var command = PythonInterface.BuildCommand("thresh", thresholdRoundValue.ToString(), currentImagePath);
+                Mat image = pythonInterface.SendCommand(command);
+
+                CommandCallbackEventDispatch(command, image);
+
+
+                if (image != null)
+                {
+                    var bitmapSource = image.ToBitmapSource();
+
+                    bitmapSource.Freeze();
+
+                    ImgScreen.Dispatcher.Invoke(new Action(() =>
+                    {
+                        ImgScreen.Source = null;
+                        ImgScreen.Source = bitmapSource;
+                    }));
+                }
+
             }
+
+
+            //if (DistanceEnable == false && SegmentActivated == true)
+            //{
+            //    Sens_Slider.IsEnabled = false;
+            //    Ena_Distance.IsChecked = false;
+
+            //    var thresholdRoundValue = Math.Round(Thresh_Slider.Value);
+            //    var command = PythonInterface.BuildCommand("thresh", thresholdRoundValue.ToString(), SourceImgSegment);
+            //    Mat image = pythonInterface.SendCommand(command);
+
+            //    CommandCallbackEventDispatch(command, image);
+
+
+            //    if (image != null)
+            //    {
+            //        var bitmapSource = image.ToBitmapSource();
+
+            //        bitmapSource.Freeze();
+
+            //        ImgScreen.Dispatcher.Invoke(new Action(() =>
+            //        {
+            //            ImgScreen.Source = null;
+            //            ImgScreen.Source = bitmapSource;
+            //        }));
+            //    }
+
+            //}
+
+        
 
             if (DistanceEnable == false && SegmentActivated == true)
             {
@@ -1113,12 +1169,12 @@ namespace GIAO_DIEN
             Console.WriteLine("================");
         }
         
-        
+ //-----------------------------------------------------------------------------------------------------------------------       
 
         private void Back_Click(object sender, RoutedEventArgs e)
         {
   
-            if (backStack.Count() != 0)
+            if (backStack.Count() > 0)
             {
 
                 nextStack.Push(backStack.Peek());
@@ -1145,7 +1201,7 @@ namespace GIAO_DIEN
                     }
                     else if (dataPo is ImageBackAction)
                     {
-                        if (SegmentActivated == true)
+                        if (SegmentActivated == false )
                         {
                             var imageAction = (ImageBackAction)dataPo;
                             ImgScreen.Source = imageAction.image;
@@ -1154,10 +1210,13 @@ namespace GIAO_DIEN
 
                         if (SegmentActivated == true)
                         {
+
                             var imageAction = (ImageBackAction)dataPo;
                             ImgScreen.Source = imageAction.image;
 
                             backStack.Clear();
+
+                            PrintBackStack();
 
                             var imageActionInTam = new ImageBackAction();
                             imageActionInTam.image = ImgScreen.Source as BitmapImage;
@@ -1176,8 +1235,12 @@ namespace GIAO_DIEN
                 }
                 else
                 {
+
+                   
+
+                    Ena_Distance.IsChecked = false;
+                    Ena_Threshold.IsChecked = false;
                     MessageBox.Show("stack empty");
-                    backStack.Clear();
                     tempThresh = true;
                     tamH = true;
                     tempDistance = true;
@@ -1233,7 +1296,7 @@ namespace GIAO_DIEN
         private void Next_Click(object sender, RoutedEventArgs e)
         {
 
-            if (nextStack.Count() != 0)
+            if (nextStack.Count() > 0)
             {
                 
                 BackAction popData = nextStack.Pop();
@@ -1308,7 +1371,7 @@ namespace GIAO_DIEN
                     //}               
 
             }
-
+            PrintBackStack();
         }
 
 
@@ -2040,11 +2103,11 @@ namespace GIAO_DIEN
 
 
 
-
 //-----------------------------------------------------------------------------------------------------------------------      
         Mat ImgAfterSegment;
         private void SendCropImgBtn_Click(object sender, RoutedEventArgs e)
         {
+
             if (tempSend == true)
             {
                 var imageActionInLocal = new ImageBackAction();
