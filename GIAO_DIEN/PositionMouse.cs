@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GIAO_DIEN
+namespace GLORY_TO_GOD
 {
     class PositionMouse
     {

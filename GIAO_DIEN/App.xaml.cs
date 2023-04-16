@@ -6,7 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace GIAO_DIEN
+namespace GLORY_TO_GOD
 {
     /// <summary>
     /// Interaction logic for App.xaml

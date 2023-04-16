@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace GIAO_DIEN.Properties {
+namespace GLORY_TO_GOD.Properties {
     using System;
     
     

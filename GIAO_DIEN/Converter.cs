@@ -10,7 +10,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using OpenCvSharp;
 
-namespace GIAO_DIEN
+namespace GLORY_TO_GOD
 {
     class Converter
     {
