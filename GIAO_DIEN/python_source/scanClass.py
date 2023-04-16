@@ -5,7 +5,7 @@ import numpy as np
 from skimage.feature import peak_local_max
 from skimage.segmentation import watershed
 from scipy import ndimage
-
+import sys
 
 
 
@@ -44,10 +44,10 @@ class ScanClass:
         return imgOriginal
 
 
-    def GrayImage(self, roi):
-       GrayImage = cv2.cvtColor(roi,cv2.COLOR_BGR2GRAY)
+    def RoiAndGray(self, roi):
+        roiandgray = cv2.cvtColor(roi,cv2.COLOR_BGR2GRAY)
 
-       return GrayImage
+        return roiandgray
 
     
     
@@ -55,9 +55,7 @@ class ScanClass:
         thresh = cv2.threshold(grayandroi, ThreshValue, 255,  
         cv2.THRESH_BINARY_INV )[1]
 
-        threshinv = cv2.bitwise_not(thresh)
-
-        return threshinv 
+        return thresh 
 
     
     def LocalImage(self,threshImg, minDistanceValue):
@@ -70,15 +68,11 @@ class ScanClass:
         return labelsImg
     
     
-    def CountColoni(self,labelsImg,roiandgray,roi, segmentcontours):
+    def CountColoni(self,labelsImg,roiandgray,roi):
         MIN_BACTERIA_SIZE = 20
         countBacteria    = 0
         bacteriaColonies = []
         bacteriaCenters  = []
-
-        finalmage = roi.copy()
-
-        print(finalmage.shape)
 
         uniqueLabels = np.unique(labelsImg)
         for label in np.unique(labelsImg):
@@ -99,32 +93,9 @@ class ScanClass:
                 continue
 
             centerOfContour = cv2.moments(biggestContourInAzone)
-
             centerX = int(centerOfContour['m10']/centerOfContour['m00'])
             centerY = int(centerOfContour['m01']/centerOfContour['m00'])
             centerOfBacteria = (centerX,centerY)
-           
-           
-            
-            isInsideContour = False
-
-            for segmentContour in segmentcontours:
-                print(segmentContour)
-
-                result = cv2.pointPolygonTest(segmentContour, centerOfBacteria, False)
-
-                if result == 1.0 or result == 0.0:
-                    isInsideContour = True
-                    break
-
-            if not isInsideContour:
-                continue
-
-
-            cv2.putText(finalmage,str(centerX), centerOfBacteria, cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0,0,255), 1)
-            
-            cv2.drawContours(finalmage,[biggestContourInAzone], -1, (255,0,0), 1)
-
             bacteriaCenters.append([centerX,centerY])
 
             countBacteria += 1
@@ -133,8 +104,8 @@ class ScanClass:
             showed = ("bacteria id: " + str(countBacteria) + " size: " + str(currentContourSize) + " position: " + str(centerOfBacteria) )
             bacteriaColonies.append(centerOfBacteria)
             
-            
-            
+            finalmage = cv2.putText(roi,str(countBacteria), centerOfBacteria, cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0,0,255), 1)
+            ContoursColonies = cv2.drawContours(finalmage,[biggestContourInAzone], -1, (255,0,0), 1)
 
         return finalmage, bacteriaCenters, countBacteria    
     

@@ -15,7 +15,7 @@ using System.Windows.Shapes;
 using System.IO.Ports;
 using System.Windows.Threading;
 
-namespace GLORY_TO_GOD
+namespace GIAO_DIEN
 {
     /// <summary>
     /// Interaction logic for UserControl1.xaml

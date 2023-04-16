@@ -1,7 +1,7 @@
 ﻿
 using System.Windows.Media.Imaging;
 
-namespace GLORY_TO_GOD.backActionChild
+namespace GIAO_DIEN.backActionChild
 {
     class ImageBackAction : BackAction
     {

@@ -21,10 +21,9 @@ using Microsoft.Win32;
 using System.Threading.Channels;
 using Rectangle = System.Windows.Shapes.Rectangle;
 using OpenCvPoint = OpenCvSharp.Point;
-using GLORY_TO_GOD.backActionChild;
-using Newtonsoft.Json;
+using GIAO_DIEN.backActionChild;
 
-namespace GLORY_TO_GOD
+namespace GIAO_DIEN
 {
 
     /// <summary>
@@ -40,6 +39,11 @@ namespace GLORY_TO_GOD
         int ZoomOutRatio;
         bool AutoMode = false;
         bool ManualMode = false;
+
+        //Stack<double> mystackValues = new Stack<double>();
+        //Stack<string> mystackLabels = new Stack<string>();
+        //Stack<double> mystackCurValues = new Stack<double>();
+        //Stack<string> mystackCurLabels = new Stack<string>();
 
         Stack<BackAction> backStack = new Stack<BackAction>();
         Stack<BackAction> nextStack = new Stack<BackAction>();
@@ -61,9 +65,19 @@ namespace GLORY_TO_GOD
         System.Windows.Point dragClickup;
         System.Windows.Point dragClickdown;
 
-
+        string curLabel;
+        double curValue;
+        bool tempThresh = true;
+        bool tempDistance = true;
+        bool tamH = true;
+        bool tamS = true;
+        bool tamV = true;
         bool tempConfirm = true;
         bool tempSend = true;
+        bool DistanceEnable = false;
+        bool ThreshEnable = false;
+
+        bool getPosByClickEnable = false;
         bool SegmentActivated = false;
         bool ConfirmActivated = false;
 
@@ -98,9 +112,17 @@ namespace GLORY_TO_GOD
             DateTime_Textbox.Text = _datetime;
             _barcode = barcode;
             BarcodeID.Text = _barcode;
+
+            if (DistanceEnable == false)
+            {
+                Sens_Slider.IsEnabled = false;
+            }
+            if (ThreshEnable == false)
+            {
+                Thresh_Slider.IsEnabled = false;
+            }
+
         }
-
-
 
         private String generateFilename()
         {
@@ -741,9 +763,14 @@ namespace GLORY_TO_GOD
  
         private void EditBtn_Click(object sender, RoutedEventArgs e)
         {
-            var command = PythonInterface.BuildCommand("edit");
+            var command = PythonInterface.BuildCommand("centers");
             string bacteriaCentersString = pythonInterface.SendCommandAndReceiveRawString(command);
             List<BacteriaCenter> bacteriaCenters = Converter.StringToBacteriaCenters(bacteriaCentersString);
+
+            //lap qua cai mang bacter
+            //imagesource 
+            //lay toa do chuot tren image source x, y
+            //for b in bacteriaCenters   ===> Distance(b.x, b.y, x, y) 
 
 
         }
@@ -822,8 +849,7 @@ namespace GLORY_TO_GOD
         //----------------------------------------------------------------------------------------------------------------------------------------
         private void ClearBtn_Click(object sender, RoutedEventArgs e)
         {
-            int x = 0;
-            Total_Count_Value.Text =  x.ToString();
+
             backStack.Clear();
             nextStack.Clear();
 
@@ -832,8 +858,20 @@ namespace GLORY_TO_GOD
             ImgScreen.Source = null;
 
             SegmentActivated = false;
-           
-          
+            getPosByClickEnable = false;
+
+            DistanceEnable = false;
+            ThreshEnable = false;
+
+            Sens_Slider.IsEnabled = false;
+            Thresh_Slider.IsEnabled = false;
+
+            Ena_Distance.IsChecked = false;
+            Ena_Threshold.IsChecked = false;
+
+            Thresh_Slider.Value = 0;
+            Sens_Slider.Value = 0;
+
             circleCheck = false;
 
             if (circleCheck == false)
@@ -848,8 +886,279 @@ namespace GLORY_TO_GOD
 
         /// <summary>
         /// HSV CONTROL MANUAL, GRAYSCALE, THRESHOLD _______________________________________________________________
+        bool ColorFilterEnable = false;
+        bool GrayScaleEnable = false;
+        Mat GrayScaleImg;
+        Mat HSVImg;
+
+        private void ColorFilter_Enable_Checked(object sender, RoutedEventArgs e)
+        {
+            ColorFilterEnable = true;
+            HSVImg = new Mat();
+            if (ColorFilterEnable == true)
+            {
+                H_Slider.IsEnabled = true;
+                S_Slider.IsEnabled = true;
+                V_Slider.IsEnabled = true;
+                Cv2.CvtColor(SourceImg, HSVImg, ColorConversionCodes.BGR2HSV);
+ 
+                System.Drawing.Bitmap HSV = MatToBitmap(HSVImg);
+                var converted = Convert(BitmapConverter.ToBitmap(HSVImg));
+                ImgScreen.Source = converted;
+            }
+        }
+
+        private void ColorFilter_Enable_Unchecked(object sender, RoutedEventArgs e)
+        {
+            ColorFilterEnable = false;
+            if (ColorFilterEnable == false)
+            {
+                H_Slider.IsEnabled = false;
+                S_Slider.IsEnabled = false;
+                V_Slider.IsEnabled = false;
+            }
+        }
+
+
+        private void GrayScale_CheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            GrayScaleEnable = false;
+            if (GrayScaleEnable == false)
+            {
+                GrayScaleImg = SourceImg;           
+                var converted = Convert(BitmapConverter.ToBitmap(GrayScaleImg));
+                ImgScreen.Source = converted;
+            }
+        }
+
+        private void GrayScale_CheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            GrayScaleEnable = true;
+            if (GrayScaleEnable == true)
+            {
+                GrayScaleImg = new Mat();
+                Cv2.CvtColor(SourceImg, GrayScaleImg, ColorConversionCodes.BGR2GRAY);
+                var converted = Convert(BitmapConverter.ToBitmap(GrayScaleImg));
+                ImgScreen.Source = converted;
+            }
+        }
+
+        private void Ena_Threshold_Checked(object sender, RoutedEventArgs e)
+        {
+            ThreshEnable = true;
+            if (ThreshEnable == true)
+            {
+                Thresh_Slider.IsEnabled = true;
+                Ena_Threshold.IsChecked = true;
+
+                var thresholdRoundValue = Math.Round(Thresh_Slider.Value);
+                var command = PythonInterface.BuildCommand("thresh", thresholdRoundValue.ToString(), currentImagePath);
+                Mat image = pythonInterface.SendCommand(command);
+
+                CommandCallbackEventDispatch(command, image);
+
+
+                if (image != null)
+                {
+                    var bitmapSource = image.ToBitmapSource();
+
+                    bitmapSource.Freeze();
+
+                    ImgScreen.Dispatcher.Invoke(new Action(() =>
+                    {
+                        ImgScreen.Source = null;
+                        ImgScreen.Source = bitmapSource;
+                    }));
+                }
+
+            }
+
+
+            if (ThreshEnable == true && SegmentActivated == true)
+            {
+                Thresh_Slider.IsEnabled = true;
+                Ena_Threshold.IsChecked = true;
+                var thresholdRoundValue = Math.Round(Thresh_Slider.Value);
+                var command = PythonInterface.BuildCommand("thresh", thresholdRoundValue.ToString(), SourceImgSegment);
+                Mat image = pythonInterface.SendCommand(command);
+
+                CommandCallbackEventDispatch(command, image);
+
+
+                if (image != null)
+                {
+                    var bitmapSource = image.ToBitmapSource();
+
+                    bitmapSource.Freeze();
+
+                    ImgScreen.Dispatcher.Invoke(new Action(() =>
+                    {
+                        ImgScreen.Source = null;
+                        ImgScreen.Source = bitmapSource;
+                    }));
+                }
+
+            }
+
+            //------------------------------- NOTE:  --------------------------------------------------------------------------------
+        }
+        private void Ena_Threshold_Unchecked(object sender, RoutedEventArgs e)
+        {
+            ThreshEnable = false;
+            if (ThreshEnable == false && ConfirmActivated == true)
+            {
+                Thresh_Slider.IsEnabled = false;
+                Ena_Threshold.IsChecked = false;
+
+                ImgScreen.Source = Convert(BitmapConverter.ToBitmap(ImgAfterAddMask));
+            }
+
+            if (ThreshEnable == false && SegmentActivated == true)
+            {
+                Thresh_Slider.IsEnabled = false;
+                Ena_Threshold.IsChecked = false;
+
+                ImgScreen.Source = Convert(BitmapConverter.ToBitmap(ImgAfterSegment));
+            }
+
+        }
+
+
+        private void Ena_Distance_Checked(object sender, RoutedEventArgs e)
+        {
+            DistanceEnable = true;
+            if (DistanceEnable == true)
+            {
+                Sens_Slider.IsEnabled = true;
+                Ena_Distance.IsChecked = true;
+
+                var distanceRoundValue = Math.Round(Sens_Slider.Value).ToString();
+                var thresholdRoundValue = Math.Round(Thresh_Slider.Value).ToString();
+                var command = PythonInterface.BuildCommand("distance", distanceRoundValue, thresholdRoundValue, currentImagePath);
+                Mat image = pythonInterface.SendCommand(command);
+
+                CommandCallbackEventDispatch(command, image);
+
+
+                if (image != null)
+                {
+                    var bitmapSource = image.ToBitmapSource();
+
+                    bitmapSource.Freeze();
+
+                    ImgScreen.Dispatcher.Invoke(new Action(() =>
+                    {
+                        ImgScreen.Source = null;
+                        ImgScreen.Source = bitmapSource;
+                    }));
+                }
+
+            }
+
+
+            if (DistanceEnable == true && SegmentActivated == true)
+            {
+                Sens_Slider.IsEnabled = true;
+                Ena_Distance.IsChecked = true;
+
+                var distanceRoundValue = Math.Round(Sens_Slider.Value).ToString();
+                var thresholdRoundValue = Math.Round(Thresh_Slider.Value).ToString();
+                var command = PythonInterface.BuildCommand("distance", distanceRoundValue, thresholdRoundValue, SourceImgSegment);
+                Mat image = pythonInterface.SendCommand(command);
+
+                CommandCallbackEventDispatch(command, image);
+
+
+                if (image != null)
+                {
+                    var bitmapSource = image.ToBitmapSource();
+
+                    bitmapSource.Freeze();
+
+                    ImgScreen.Dispatcher.Invoke(new Action(() =>
+                    {
+                        ImgScreen.Source = null;
+                        ImgScreen.Source = bitmapSource;
+                    }));
+                }
+
+            }
+
+        }
+
+
+
+        private void Ena_Distance_Unchecked(object sender, RoutedEventArgs e)
+        {
+            DistanceEnable = false;
+            if (DistanceEnable == false && ConfirmActivated == true)
+            {
+                Sens_Slider.IsEnabled = false;
+                Ena_Distance.IsChecked = false;
+
+                var thresholdRoundValue = Math.Round(Thresh_Slider.Value);
+                var command = PythonInterface.BuildCommand("thresh", thresholdRoundValue.ToString(), currentImagePath);
+                Mat image = pythonInterface.SendCommand(command);
+
+                CommandCallbackEventDispatch(command, image);
+
+
+                if (image != null)
+                {
+                    var bitmapSource = image.ToBitmapSource();
+
+                    bitmapSource.Freeze();
+
+                    ImgScreen.Dispatcher.Invoke(new Action(() =>
+                    {
+                        ImgScreen.Source = null;
+                        ImgScreen.Source = bitmapSource;
+                    }));
+                }
+
+            }
+
+
+            //if (DistanceEnable == false && SegmentActivated == true)
+            //{
+            //    Sens_Slider.IsEnabled = false;
+            //    Ena_Distance.IsChecked = false;
+
+            //    var thresholdRoundValue = Math.Round(Thresh_Slider.Value);
+            //    var command = PythonInterface.BuildCommand("thresh", thresholdRoundValue.ToString(), SourceImgSegment);
+            //    Mat image = pythonInterface.SendCommand(command);
+
+            //    CommandCallbackEventDispatch(command, image);
+
+
+            //    if (image != null)
+            //    {
+            //        var bitmapSource = image.ToBitmapSource();
+
+            //        bitmapSource.Freeze();
+
+            //        ImgScreen.Dispatcher.Invoke(new Action(() =>
+            //        {
+            //            ImgScreen.Source = null;
+            //            ImgScreen.Source = bitmapSource;
+            //        }));
+            //    }
+
+            //}
+
         
-        
+
+            if (DistanceEnable == false && SegmentActivated == true)
+            {
+                Sens_Slider.IsEnabled = false;
+                Ena_Distance.IsChecked = false;
+
+                ImgScreen.Source = Convert(BitmapConverter.ToBitmap(ImgAfterSegment));
+            }
+
+        }
+
+
         //-------------------------------------------------------------------------------------------------------------------------------------- 
         private void PrintBackStack()
         {
@@ -880,12 +1189,40 @@ namespace GLORY_TO_GOD
 
                     BackAction dataPo = backStack.Peek();
 
-                    if (dataPo is ImageBackAction)
+                    if (dataPo is ThreshBackAction)
                     {
+                        var threshAction = (ThreshBackAction)dataPo;
+                        Thresh_Slider.Value = threshAction.value;
+                    }
+                    else if (dataPo is DistanceBackAction)
+                    {
+                        var distanceAction = (DistanceBackAction)dataPo;
+                        Sens_Slider.Value = distanceAction.value;
+                    }
+                    else if (dataPo is ImageBackAction)
+                    {
+                        if (SegmentActivated == false )
+                        {
+                            var imageAction = (ImageBackAction)dataPo;
+                            ImgScreen.Source = imageAction.image;
+
+                        }
+
+                        if (SegmentActivated == true)
+                        {
 
                             var imageAction = (ImageBackAction)dataPo;
                             ImgScreen.Source = imageAction.image;
 
+                            backStack.Clear();
+
+                            PrintBackStack();
+
+                            var imageActionInTam = new ImageBackAction();
+                            imageActionInTam.image = ImgScreen.Source as BitmapImage;
+                            backStack.Push(imageActionInTam);
+
+                        }
 
                     }
                     else if (dataPo is PolyBackAction)
@@ -898,8 +1235,56 @@ namespace GLORY_TO_GOD
                 }
                 else
                 {
+
+                   
+
+                    Ena_Distance.IsChecked = false;
+                    Ena_Threshold.IsChecked = false;
                     MessageBox.Show("stack empty");
+                    tempThresh = true;
+                    tamH = true;
+                    tempDistance = true;
+                    tamS = true;
+                    tamV = true;
+                    tempConfirm = true;
+
                 }
+
+
+                //switch (dataPo.backActionLabel)
+                //{
+                //    case "thresh":
+                //        Console.WriteLine("...............");
+                //        Thresh_Slider.Value = dataPo.backActionValue;
+                //        //foreach (var item in mystackValues)
+                //        //    Console.WriteLine(item);
+                //        //foreach (var item in mystackLabels)
+                //        //    Console.WriteLine(item);
+                //        break;
+                //    case "local":
+                //        Console.WriteLine("...............");
+                //        Sens_Slider.Value = dataPo.backActionValue;
+                //        break;
+                //    case "confirm":
+                //        SourceImg = Cv2.ImRead(SelectImgPath);
+
+                //        BitmapImage bitmap = new BitmapImage();
+                //        bitmap.BeginInit();
+                //        bitmap.UriSource = new Uri(SelectImgPath);
+                //        bitmap.EndInit();
+
+                //        ImgScreen.Width = SourceImg.Width / 6.5;
+                //        ImgScreen.Height = SourceImg.Height / 6.5;
+                //        Canvas_On_ImgScreen.Width = SourceImg.Width / 6.5;
+                //        Canvas_On_ImgScreen.Height = SourceImg.Height / 6.5;
+
+                //        ImgScreen.Source = bitmap;
+
+                //        Canvas_On_ImgScreen.Children.Clear();
+                //        break;
+                //    default:
+                //        break;
+                //}
 
             }
 
@@ -917,12 +1302,31 @@ namespace GLORY_TO_GOD
                 BackAction popData = nextStack.Pop();
 
                 backStack.Push(popData);
-               
-                if (popData is ImageBackAction)
+                
+                if (popData is ThreshBackAction)
                 {
+                  
+                    ThreshBackAction threshBackAction = (ThreshBackAction)popData;
                    
-                    ImageBackAction imageBackAction = (ImageBackAction)popData;
-                    ImgScreen.Source = Convert(BitmapConverter.ToBitmap(ImgAfterAddMask));
+                    Thresh_Slider.Value = threshBackAction.value;
+
+                }
+                else if (popData is DistanceBackAction)
+                {
+                    DistanceBackAction distanceBackAction = (DistanceBackAction)popData;
+                    Sens_Slider.Value = distanceBackAction.value;
+                }
+                else if (popData is ImageBackAction)
+                {
+                    if (SegmentActivated == false)
+                    {
+                        ImageBackAction imageBackAction = (ImageBackAction)popData;
+                        ImgScreen.Source = Convert(BitmapConverter.ToBitmap(ImgAfterAddMask));
+                    }
+                    if (SegmentActivated == true)
+                    {
+                        ImgScreen.Source = Convert(BitmapConverter.ToBitmap(ImgAfterSegment));
+                    }
 
                 }
 
@@ -931,9 +1335,233 @@ namespace GLORY_TO_GOD
                     DrawPolies();
                 }
 
+                    //dataPre = nextStack.peek(); {label: "thresh", backActionValue: 100}
+
+                    //switch (dataPre.backActionLabel)
+                    //{
+                    //    case "thresh":
+                    //        Console.WriteLine("value cur peek");
+                    //        Thresh_Slider.Value = dataPre.backActionValue;
+                    //        popData = nextStack.Pop();
+                    //        curValue = popData.backActionValue;
+                    //        curLabel = popData.backActionLabel;
+                    //        backStack.Push(popData);
+
+                    //        break;
+                    //    case "local":
+                    //        Console.WriteLine("value cur peek");
+                    //        Sens_Slider.Value = dataPre.backActionValue;
+                    //        popData = nextStack.Pop();
+                    //        curValue = popData.backActionValue;
+                    //        curLabel = popData.backActionLabel;
+                    //        backStack.Push(popData);
+                    //        break;
+                    //    case "confirm":
+                    //        ImgScreen.Source = Convert(BitmapConverter.ToBitmap(ImgAfterAddMask));
+                    //        double i = 999;
+                    //        i = dataPre.backActionValue;
+                    //        popData = nextStack.Pop();
+                    //        curValue = popData.backActionValue;
+                    //        curLabel = popData.backActionLabel;
+                    //        backStack.Push(popData);
+                    //        break;
+                    //    default:
+                    //        break;
+
+                    //}               
+
             }
             PrintBackStack();
         }
+
+
+
+        private void Thresh_Slider_PreviewMouseUp(object sender, MouseButtonEventArgs e)
+        {          
+
+            if (tempThresh == true)
+            {
+                var threshActionInLocal = new ThreshBackAction();
+                threshActionInLocal.value = 0;
+                backStack.Push(threshActionInLocal);
+
+                tempThresh = false;
+            }
+
+            var threshActionInSlider = new ThreshBackAction();
+            threshActionInSlider.value = Thresh_Slider.Value;
+            backStack.Push(threshActionInSlider);
+
+            PrintBackStack();
+
+        }
+
+        private void OK_Thresh_Click(object sender, RoutedEventArgs e)
+        {
+
+            BackAction topData = new BackAction();
+
+            if (backStack.Count() == 0)
+            {
+                var threshAction = new ThreshBackAction();
+                threshAction.value = -1;
+
+                topData = threshAction;
+            }
+            else
+            {
+                topData = backStack.Peek(); 
+            }
+
+
+            double TextBoxThreshValue = double.Parse(Thresh_Value.Text);
+            TextBoxThreshValue = Math.Round(TextBoxThreshValue);
+
+            double SliderThreshValue = Math.Round(Thresh_Slider.Value);
+
+            if (topData is ThreshBackAction &&
+                //tempObject.value == Thresh_Slider.Value && 
+                SliderThreshValue == TextBoxThreshValue)
+            {
+                ThreshBackAction tempObject = (ThreshBackAction)topData; 
+
+                if (tempObject.value == Thresh_Slider.Value)
+                {
+                    return;
+                }
+            }
+
+            if (tempThresh == true)
+            {
+                var threshActionInLocal = new ThreshBackAction();
+                threshActionInLocal.value = 0;
+
+                backStack.Push(threshActionInLocal);
+
+                tempThresh = false;
+
+            }
+
+            var threshSliderActionInSlider = new ThreshBackAction();
+            threshSliderActionInSlider.value = Thresh_Slider.Value;
+
+            backStack.Push(threshSliderActionInSlider);
+
+            PrintBackStack();
+
+        }
+
+
+
+        private void Sens_Slider_PreviewMouseUp(object sender, MouseButtonEventArgs e)
+        {
+            
+            if (tempDistance == true)
+            {
+                var distanceActionInLocal = new DistanceBackAction();
+
+                distanceActionInLocal.value = 0;
+
+                backStack.Push(distanceActionInLocal);
+
+                tempDistance = false;
+            }
+
+            var distanceActionInSlider = new DistanceBackAction();
+            distanceActionInSlider.value = Sens_Slider.Value;
+            backStack.Push(distanceActionInSlider);
+
+            PrintBackStack();
+
+        }
+
+
+
+
+        private void OK_Sens_Click(object sender, RoutedEventArgs e)
+        {
+
+            BackAction topData;
+
+            if (backStack.Count() == 0)
+            {
+                var distanceAction = new DistanceBackAction();
+                distanceAction.value = -1;
+
+                topData = distanceAction;
+            }
+            else
+            {
+                topData = backStack.Peek();
+            }
+
+            double TextBoxLocalValue = double.Parse(Sens_Value.Text);
+            TextBoxLocalValue = Math.Round(TextBoxLocalValue);
+
+            double SliderLocalValue = Math.Round(Sens_Slider.Value);
+
+            if (topData is DistanceBackAction &&
+                //topData.backActionValue == Sens_Slider.Value && 
+                SliderLocalValue == TextBoxLocalValue)
+            {
+                DistanceBackAction tempobject = (DistanceBackAction)topData;
+                if (tempobject.value == Sens_Slider.Value)
+                {
+                    return;
+                }
+            }
+
+            if (tempDistance == true)
+            {
+                var distanceActionInTamLocal = new DistanceBackAction();
+                distanceActionInTamLocal.value = 0;
+                backStack.Push(distanceActionInTamLocal);
+
+                tempDistance = false;
+            }
+
+            var distanceActionSliderValue = new DistanceBackAction();
+            distanceActionSliderValue.value = Sens_Slider.Value;
+            backStack.Push(distanceActionSliderValue);
+
+            PrintBackStack();
+        }
+
+
+
+
+        private void OK_H_Click(object sender, RoutedEventArgs e)
+        {
+        }
+
+        private void H_Slider_PreviewMouseUp(object sender, MouseButtonEventArgs e)
+        {
+        }
+
+        private void OK_S_Click(object sender, RoutedEventArgs e)
+        {
+
+
+        }
+
+        private void S_Slider_PreviewMouseUp(object sender, MouseButtonEventArgs e)
+        {
+
+         
+        }
+
+        private void OK_V_Click(object sender, RoutedEventArgs e)
+        {
+
+
+        }
+
+        private void V_Slider_PreviewMouseUp(object sender, MouseButtonEventArgs e)
+        {
+        }
+
+
+
 
 
         //-------------------------------------------------------------------------------------------------------------------------------------- 
@@ -951,11 +1579,14 @@ namespace GLORY_TO_GOD
             {
                 return;
             }
-            if (command.Contains("segment"))
+            if (command.Contains("distance"))
             {
-                image.SaveImage(AppConstraint.SEGMENT_OUTPUT_IMAGE);
+                image.SaveImage(AppConstraint.DISTANCE_OUTPUT_IMAGE);
             }
-
+            if (command.Contains("thresh"))
+            {
+                image.SaveImage(AppConstraint.THRESH_OUTPUT_IMAGE);
+            }
 
         }
 
@@ -998,76 +1629,127 @@ namespace GLORY_TO_GOD
                     Console.WriteLine("what is wrong?! " + e.Message);
                 }
 
-
         }
 
 
 
 
-        Mat ImgAfterSegment;
-        private void SendCropImgBtn_Click(object sender, RoutedEventArgs e)
+
+        private async void Thresh_Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (SegmentActivated == false)
+            {
+                var thresholdRoundValue = Math.Round(e.NewValue);
+                var command = PythonInterface.BuildCommand("thresh", thresholdRoundValue.ToString(), currentImagePath);
+                await channelValues.Writer.WriteAsync(command, CancellationToken.None);
+
+                Thresh_Value.Text = Thresh_Slider.Value.ToString();
+            }
+
+            if (SegmentActivated == true)
+            {
+                var thresholdRoundValue = Math.Round(e.NewValue);
+                var command = PythonInterface.BuildCommand("thresh", thresholdRoundValue.ToString(), SourceImgSegment);
+                await channelValues.Writer.WriteAsync(command, CancellationToken.None);
+
+                Thresh_Value.Text = Thresh_Slider.Value.ToString();
+            }           
+        }
+
+
+
+
+        private async void Sens_Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (SegmentActivated == false)
+            {
+                var thresholdRoundValue = Math.Round(Thresh_Slider.Value).ToString();
+                var distanceRoundValue = Math.Round(e.NewValue).ToString();
+
+                var command = PythonInterface.BuildCommand("distance", distanceRoundValue, thresholdRoundValue, currentImagePath);
+                await channelValues.Writer.WriteAsync(command, CancellationToken.None);
+
+                Sens_Value.Text = Sens_Slider.Value.ToString();
+
+                Console.WriteLine("----segment fasle-----");
+            }
+
+            if (SegmentActivated == true)
+            {
+                var thresholdRoundValue = Math.Round(Thresh_Slider.Value).ToString();
+                var distanceRoundValue = Math.Round(e.NewValue).ToString();
+
+                var command = PythonInterface.BuildCommand("distance", distanceRoundValue, thresholdRoundValue, SourceImgSegment);
+                await channelValues.Writer.WriteAsync(command, CancellationToken.None);
+
+                Sens_Value.Text = Sens_Slider.Value.ToString();
+                Console.WriteLine("----segment true-----");
+            }
+         
+        }
+
+
+
+
+        private void H_Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            H_Slider_Value.Text = H_Slider.Value.ToString();
+        }
+
+        private void S_Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            S_Slider_Value.Text = S_Slider.Value.ToString(); ;
+        }
+
+        private void V_Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            V_Slider_Value.Text = V_Slider.Value.ToString();
+        }
+        //-------------------------------------------------------------------------------------------------------------------------------------- 
+
+
+
+
+        private void Thresh_Value_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            double TextBoxThreshValue = double.Parse(Thresh_Value.Text);
+            TextBoxThreshValue = Math.Round(TextBoxThreshValue);
+
+            Thresh_Slider.Value = TextBoxThreshValue;
+        }
+
+        private void Sens_Value_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            double TextBoxLocalValue = double.Parse(Sens_Value.Text);
+            TextBoxLocalValue = Math.Round(TextBoxLocalValue);
+
+            Sens_Slider.Value = TextBoxLocalValue;
+        }
+
+        private void H_Slider_Value_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            double TextBoxHValue = double.Parse(H_Slider_Value.Text);
+            TextBoxHValue = Math.Round(TextBoxHValue);
+
+            H_Slider.Value = TextBoxHValue;
+        }
+
+        private void S_Slider_Value_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            double TextBoxSValue = double.Parse(S_Slider_Value.Text);
+            TextBoxSValue = Math.Round(TextBoxSValue);
+
+            S_Slider.Value = TextBoxSValue;
+        }
+
+        private void V_Slider_Value_TextChanged(object sender, TextChangedEventArgs e)
         {
 
-            if (tempSend == true)
-            {
-                var imageActionInLocal = new ImageBackAction();
-                imageActionInLocal.image = ImgScreen.Source as BitmapImage;
-                backStack.Push(imageActionInLocal);
+            double TextBoxVValue = double.Parse(V_Slider_Value.Text);
+            TextBoxVValue = Math.Round(TextBoxVValue);
 
-                tempSend = false;
-            }
-            var imageActionInTam = new ImageBackAction();
-            imageActionInTam.image = ImgScreen.Source as BitmapImage;
-            backStack.Push(imageActionInTam);
-
-            CropPolies();
-            PrintBackStack();
-
-            var imgAferSecmented = Convert(BitmapConverter.ToBitmap(ImgAfterSegment));
-            ImgScreen.Source = imgAferSecmented;
-
-            var saveFileName = "imgcanvas.jpg";
-            ImgAfterSegment.SaveImage(saveFileName);
-            SourceImgSegment = Directory.GetCurrentDirectory() + "\\" + saveFileName;
-
-            DeletePolylineAndRectangle();
-
-            List<BackAction> polyPointList = new List<BackAction>();
-
-            foreach (BackAction backAction in backStack)
-            {
-                if (backAction is PolyBackAction)
-                {
-                    polyPointList.Add(backAction);
-                }
-            }
-
-            string jsonCommand = JsonConvert.SerializeObject(polyPointList);
-
-
-            var command = PythonInterface.BuildCommand("segment", SourceImgSegment, jsonCommand);
-            Mat image = pythonInterface.SendCommand(command);
-
-           
-
-
-            if (image != null)
-            {
-                var bitmapSource = image.ToBitmapSource();
-
-                bitmapSource.Freeze();
-
-                ImgScreen.Dispatcher.Invoke(new Action(() =>
-                {
-                    ImgScreen.Source = null;
-                    ImgScreen.Source = bitmapSource;
-                }));
-            }
+            V_Slider.Value = TextBoxVValue;
         }
-
-
-
-
 
 
 
@@ -1232,6 +1914,7 @@ namespace GLORY_TO_GOD
 
                 teets.Text = "X: " + positionMouseX + "," + "Y: " + positionMouseY;
 
+                getPosByClickEnable = true;
             }
 
         }
@@ -1244,7 +1927,8 @@ namespace GLORY_TO_GOD
         private void TopCanvas_MouseDown(object sender, MouseButtonEventArgs e)
         {
 
-                        
+            if (SegmentActivated == true && getPosByClickEnable == true)
+            {            
 
                 PolyBackAction polyBackAction = new PolyBackAction();
                 polyBackAction.polyName = currentPolyName;
@@ -1260,11 +1944,7 @@ namespace GLORY_TO_GOD
 
                 DrawPolies();
 
-           
-
-
-
-
+            }
         }
 
         private void SelectTopPolyToDraw()
@@ -1423,12 +2103,45 @@ namespace GLORY_TO_GOD
 
 
 
-        //-----------------------------------------------------------------------------------------------------------------------      
+//-----------------------------------------------------------------------------------------------------------------------      
+        Mat ImgAfterSegment;
+        private void SendCropImgBtn_Click(object sender, RoutedEventArgs e)
+        {
+
+            if (tempSend == true)
+            {
+                var imageActionInLocal = new ImageBackAction();
+                imageActionInLocal.image = ImgScreen.Source as BitmapImage;
+                backStack.Push(imageActionInLocal);
+
+                tempSend = false;
+            }
+            var imageActionInTam = new ImageBackAction();
+            imageActionInTam.image = ImgScreen.Source as BitmapImage;
+            backStack.Push(imageActionInTam);
+
+            CropPolies();
+            PrintBackStack();
+
+            var imgAferSecmented = Convert(BitmapConverter.ToBitmap(ImgAfterSegment));
+            ImgScreen.Source = imgAferSecmented;
+
+            var saveFileName = "imgcanvas.jpg";
+            ImgAfterSegment.SaveImage(saveFileName);
+            SourceImgSegment = Directory.GetCurrentDirectory() + "\\" + saveFileName;
+
+            DeletePolylineAndRectangle(); 
+
+        }
+
+
+
+
 
 
         private void AddSegmentBtn_Click(object sender, RoutedEventArgs e)
         {
-            currentPolyName++;
+            currentPolyName++; 
         }
 
     }

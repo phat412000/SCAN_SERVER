@@ -23,7 +23,7 @@ using Basler.Pylon;
 
 using System.Net.WebSockets;
 
-namespace GLORY_TO_GOD
+namespace GIAO_DIEN
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml

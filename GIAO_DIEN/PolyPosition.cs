@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GLORY_TO_GOD
+namespace GIAO_DIEN
 {
     class PolyPosition
     {
