@@ -1,5 +1,5 @@
 ﻿
-namespace GIAO_DIEN.backActionChild
+namespace GLORY_TO_GOD.backActionChild
 {
     class PolyBackAction : BackAction
     {

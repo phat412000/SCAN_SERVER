@@ -5,15 +5,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GIAO_DIEN
+namespace GLORY_TO_GOD
 {
     public class AppConstraint
     {
-        public static string THRESH_OUTPUT_IMAGE = "threshImage.jpg";
-
-        public static string NO_IMAGE = "NO_IMAGE";
-
-        public static string DISTANCE_OUTPUT_IMAGE = "distanceImage.jpg";
+       
+        public static string SEGMENT_OUTPUT_IMAGE = "segmentImage.jpg";
         public static string getAbsolutePath(string file)
         {
             return Directory.GetCurrentDirectory() + "\\" + file;
