@@ -28,8 +28,8 @@ preprocessing_fn = smp.encoders.get_preprocessing_fn(ENCODER, ENCODER_WEIGHTS)
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(DEVICE)
-if os.path.exists('best_model_lan2.pth'):
-    best_model = torch.load('best_model_lan2.pth', map_location=DEVICE)
+if os.path.exists('best_model_gray.pth'):
+    best_model = torch.load('best_model_gray.pth', map_location=DEVICE)
     print('Loaded UNet model from this run.')
 else:
     best_model = None  
@@ -87,7 +87,6 @@ def main():
 
             jsonstring = commandArray[2]
             polyLists = json.loads(jsonstring)
-
     
             contourPoints = [] #tong chua nhung cai mang con
 
@@ -103,8 +102,8 @@ def main():
                     contourPoints.append([]) 
                     currentPolyName = name
                  
-                mouseX = int(p['mouseX'] * 6.5 / 3) # *6.5 vi ti le tu canvas len anh goc, / 2 vi giam anh goc di cho nhe segment
-                mouseY = int(p['mouseY'] * 6.5 / 3)
+                mouseX = int(p['mouseX'] * 3.5 / 3.6) # *6.5 vi ti le tu canvas len anh goc, / 2 vi giam anh goc di cho nhe segment
+                mouseY = int(p['mouseY'] * 3.5 / 3.6)
 
                 contourPoints[-1].append([mouseX, mouseY])
             
@@ -120,27 +119,54 @@ def main():
 
 
             #imageResize = cv2.resize(image, (828,567))
-            image = cv2.resize(image, (int(image.shape[1]/3), int(image.shape[1]/3)))
-    
-            image_RGB = cv2.cvtColor(image, cv2.COLOR_BGR2RGB).astype("float32") 
+            #image = cv2.resize(image, (int(image.shape[1]/3), int(image.shape[1]/3)))
+            image_url = cv2.resize(image, (640,640))
+            image_re = cv2.resize(image, (640,640))
+            
+            #image_RGB = cv2.cvtColor(image, cv2.COLOR_BGR2RGB).astype("float32") 
+            
+            image_v = image_re.copy()
+
+
+            image_v = cv2.cvtColor(image_re, cv2.COLOR_BGR2HSV).astype("float32")
+            v_channel = image_v[:, :, 2]
+            image_re[:, :, 0] = v_channel
+            image_re[:, :, 1] = v_channel
+            image_re[:, :, 2] = v_channel
+            #image = cv2.resize(image, down_points, interpolation= cv2.INTER_LINEAR)
+            #mask = cv2.cvtColor(cv2.imread(self.mask_paths[i]), cv2.COLOR_BGR2RGB)
+            #mask=cv2.resize(mask, down_points, interpolation= cv2.INTER_LINEAR)
+            cv2.imwrite("img_re.jpg",image_re)
+            image_gray = preprocessing_fn(image_re)
+
+            cv2.imwrite("image_gray.jpg", image_gray)
+            image_gray = np.transpose(image_gray, (2, 0, 1)).astype("float32")
+            
+
+            mask_colony = np.zeros(image_re.shape, dtype='uint8')
  
-            image_RGB = preprocessing_fn(image_RGB)
-            image_RGB = np.transpose(image_RGB, (2, 0, 1)).astype("float32")
-    
-            mask_colony = np.zeros(image.shape, dtype='uint8')
- 
-            x_tensor = torch.from_numpy(image_RGB).to(DEVICE).unsqueeze(0)
+            x_tensor = torch.from_numpy(image_gray).to(DEVICE).unsqueeze(0)
+
             pred_mask = best_model(x_tensor)
             pred_mask = pred_mask.detach().squeeze().cpu().numpy()
-            #print(pred_mask.shape)
-            result_colony = np.where(pred_mask[2, :, :] < 0.5, 0, 255).astype('uint8')
-            result_disk = np.where(pred_mask[1, :, :] < 0.5, 0, 255).astype('uint8') + result_colony
-            kernel = np.ones((5, 5), np.uint8)
-            result_disk = cv2.dilate(result_disk, kernel, iterations=1)
-            result_colony = cv2.bitwise_and(result_colony, result_colony, mask=result_disk)
+
+            pred_mask = np.transpose(pred_mask, (1, 2, 0))
+
+
+            print("pre_mask",pred_mask.shape)
+            result_colony = np.where(pred_mask[ :,:, 1] < 0.5, 0, 255).astype('uint8')
+
+            cv2.imwrite("result.jpg", result_colony)
+
+            print(result_colony.shape)
+            #kernel = np.ones((5, 5), np.uint8)
+            #result_disk = cv2.dilate(result_disk, kernel, iterations=1)
+            #result_colony = cv2.bitwise_and(result_colony, result_colony, mask=result_disk)
             mask_colony[:, :, 0] = result_colony
             mask_colony[:, :, 1] = result_colony
             mask_colony[:, :, 2] = result_colony
+            cv2.imwrite("mask_colony.jpg", mask_colony)
+            print("mask_colony",mask_colony.shape)
 
 
             GrayImg = ScanObject.GrayImage(mask_colony)
@@ -150,7 +176,7 @@ def main():
 
             labelsImg = distanceImage(threshImageAfterSegment, 10)
 
-            outputImageSegment, bacteriaCenters, total = ScanObject.CountColoni(labelsImg,GrayImg,image,segmentcontours)
+            outputImageSegment, bacteriaCenters, total,_ = ScanObject.CountColoni(labelsImg,GrayImg,image_url,segmentcontours)
         
             print("bacteria", bacteriaCenters)
             cv2.imwrite("ImageAfterSegment.jpg", outputImageSegment)
@@ -161,25 +187,220 @@ def main():
             win32file.WriteFile(fileHandle, bytes(outputImageSegmentUrl,"UTF-8"),None)
 
 
+
+
+        elif commandArray[0] == "send_auto_mode":
+      
+            image = cv2.imread(commandArray[1])
+
+            jsonstring = commandArray[2]
+            polyLists = json.loads(jsonstring)
+
+            contourPoints = [] #tong chua nhung cai mang con
+
+            for p in polyLists:
+ 
+                mouseX = int(p['Item1'] * 3.5 / 3.6) # *6.5 vi ti le tu canvas len anh goc, / 2 vi giam anh goc di cho nhe segment
+                mouseY = int(p['Item2'] * 3.5 / 3.6)
+
+                contourPoints.append([mouseX, mouseY])
+
+            segmentcontours = np.array(contourPoints).reshape((-1,1,2)).astype(np.int32)
+
+            segmentcontours = [segmentcontours]
+
+            print(segmentcontours)
+
+            #imageResize = cv2.resize(image, (828,567))
+            #image = cv2.resize(image, (int(image.shape[1]/3), int(image.shape[1]/3)))
+            image_url = cv2.resize(image, (640,640))
+            image_re = cv2.resize(image, (640,640))
+            
+            #image_RGB = cv2.cvtColor(image, cv2.COLOR_BGR2RGB).astype("float32") 
+            
+            image_v = image_re.copy()
+
+
+            image_v = cv2.cvtColor(image_re, cv2.COLOR_BGR2HSV).astype("float32")
+            v_channel = image_v[:, :, 2]
+            image_re[:, :, 0] = v_channel
+            image_re[:, :, 1] = v_channel
+            image_re[:, :, 2] = v_channel
+            #image = cv2.resize(image, down_points, interpolation= cv2.INTER_LINEAR)
+            #mask = cv2.cvtColor(cv2.imread(self.mask_paths[i]), cv2.COLOR_BGR2RGB)
+            #mask=cv2.resize(mask, down_points, interpolation= cv2.INTER_LINEAR)
+            cv2.imwrite("img_re.jpg",image_re)
+            image_gray = preprocessing_fn(image_re)
+
+            cv2.imwrite("image_gray.jpg", image_gray)
+            image_gray = np.transpose(image_gray, (2, 0, 1)).astype("float32")
+            
+
+            mask_colony = np.zeros(image_re.shape, dtype='uint8')
+ 
+            x_tensor = torch.from_numpy(image_gray).to(DEVICE).unsqueeze(0)
+
+            pred_mask = best_model(x_tensor)
+            pred_mask = pred_mask.detach().squeeze().cpu().numpy()
+
+            pred_mask = np.transpose(pred_mask, (1, 2, 0))
+
+
+            print("pre_mask",pred_mask.shape)
+            result_colony = np.where(pred_mask[ :,:, 1] < 0.5, 0, 255).astype('uint8')
+
+            cv2.imwrite("result.jpg", result_colony)
+
+            print(result_colony.shape)
+            #kernel = np.ones((5, 5), np.uint8)
+            #result_disk = cv2.dilate(result_disk, kernel, iterations=1)
+            #result_colony = cv2.bitwise_and(result_colony, result_colony, mask=result_disk)
+            mask_colony[:, :, 0] = result_colony
+            mask_colony[:, :, 1] = result_colony
+            mask_colony[:, :, 2] = result_colony
+            cv2.imwrite("mask_colony.jpg", mask_colony)
+            print("mask_colony",mask_colony.shape)
+
+
+            GrayImg = ScanObject.GrayImage(mask_colony)
+
+            threshImageAfterSegment = thresholdImage(GrayImg, 80)
+
+
+            labelsImg = distanceImage(threshImageAfterSegment, 10)
+
+            outputImageSegment, bacteriaCenters, total,_ = ScanObject.CountColoni(labelsImg,GrayImg,image_url,segmentcontours)
+        
+            print("bacteria", bacteriaCenters)
+            cv2.imwrite("ImageAfterSegment.jpg", outputImageSegment)
+            print("finish written image")
+
+            jsonResponse = {
+                "centers": bacteriaCenters,
+                "image": os.getcwd() + "\\ImageAfterSegment.jpg"
+            }
+            jsonResponse = "$START$" + json.dumps(jsonResponse) + "$END$"
+
+            win32file.WriteFile(fileHandle, bytes(jsonResponse,"UTF-8"),None)
+
+        
+
+
+
         elif commandArray[0] == "count":
+
+            print("taked count")
             
             outputTotal = "$START$" + str(total) + "$END$"
 
             win32file.WriteFile(fileHandle,bytes(outputTotal, "UTF-8"),None)
 
 
-        elif commandArray[0] == "edit":
+        elif commandArray[0] == "deletepoint":
+            print("taked")
+            jsonstring = commandArray[1]
+            PointLists = json.loads(jsonstring)
+          
+            image = cv2.imread(commandArray[2])
+
+            image_url = cv2.resize(image, (640,640))
+            image_re = cv2.resize(image, (640,640))
             
-            outputCenter = "$START$"
+            #image_RGB = cv2.cvtColor(image, cv2.COLOR_BGR2RGB).astype("float32") 
+            
+            image_v = image_re.copy()
 
-            for bacteria in bacteriaCenters:
-                outputCenter += "{},{},".format(bacteria[0], bacteria[1])
 
-            outputCenter = outputCenter[:-1]
-            outputCenter += "$END$"
+            image_v = cv2.cvtColor(image_re, cv2.COLOR_BGR2HSV).astype("float32")
+            v_channel = image_v[:, :, 2]
+            image_re[:, :, 0] = v_channel
+            image_re[:, :, 1] = v_channel
+            image_re[:, :, 2] = v_channel
+            #image = cv2.resize(image, down_points, interpolation= cv2.INTER_LINEAR)
+            #mask = cv2.cvtColor(cv2.imread(self.mask_paths[i]), cv2.COLOR_BGR2RGB)
+            #mask=cv2.resize(mask, down_points, interpolation= cv2.INTER_LINEAR)
+            cv2.imwrite("img_re.jpg",image_re)
+            image_gray = preprocessing_fn(image_re)
 
-            print("centers" , outputCenter)
-            win32file.WriteFile(fileHandle,bytes(outputCenter,"UTF-8"),None)
+            cv2.imwrite("image_gray.jpg", image_gray)
+            image_gray = np.transpose(image_gray, (2, 0, 1)).astype("float32")
+            
+
+            mask_colony = np.zeros(image_re.shape, dtype='uint8')
+ 
+            x_tensor = torch.from_numpy(image_gray).to(DEVICE).unsqueeze(0)
+
+            pred_mask = best_model(x_tensor)
+            pred_mask = pred_mask.detach().squeeze().cpu().numpy()
+
+            pred_mask = np.transpose(pred_mask, (1, 2, 0))
+
+
+            print("pre_mask",pred_mask.shape)
+            result_colony = np.where(pred_mask[ :,:, 1] < 0.5, 0, 255).astype('uint8')
+
+            cv2.imwrite("result.jpg", result_colony)
+
+            print(result_colony.shape)
+            #kernel = np.ones((5, 5), np.uint8)
+            #result_disk = cv2.dilate(result_disk, kernel, iterations=1)
+            #result_colony = cv2.bitwise_and(result_colony, result_colony, mask=result_disk)
+            mask_colony[:, :, 0] = result_colony
+            mask_colony[:, :, 1] = result_colony
+            mask_colony[:, :, 2] = result_colony
+            cv2.imwrite("mask_colony.jpg", mask_colony)
+            print("mask_colony",mask_colony.shape)
+
+
+            GrayImg = ScanObject.GrayImage(mask_colony)
+
+            threshImageAfterSegment = thresholdImage(GrayImg, 80)
+
+
+            labelsImg = distanceImage(threshImageAfterSegment, 10)
+
+            _, bacteriaCenters, total, bacteriaContours = ScanObject.CountColoni(labelsImg,GrayImg,image_url,segmentcontours)
+        
+            print("----", len(bacteriaContours))
+            ListPoints=[]
+
+            for p in PointLists:
+ 
+                mouseX = int(p['posx'] * 3.5 / 3.6) # *6.5 vi ti le tu canvas len anh goc, / 2 vi giam anh goc di cho nhe segment
+                mouseY = int(p['posy'] * 3.5 / 3.6)
+
+                ListPoints.append((mouseX, mouseY))
+        
+
+            for point in ListPoints:
+                
+                minDist = 100000
+                minIndex = 0
+
+                for index, (center, contour) in enumerate(zip(bacteriaCenters, bacteriaContours)):
+                    dist = math.sqrt( (point[0] - center[0])** 2 + (point[1] -center[1])** 2 )   
+                    if dist < minDist: 
+                        minDist = dist
+                        minIndex = index
+                
+                print("mindist",minDist)
+                if minDist > 12:
+                    continue
+                #minBacteria minest!
+                del bacteriaCenters[minIndex]
+                del bacteriaContours[minIndex]
+            
+            for i in range(0, len(bacteriaCenters)):
+                cv2.putText(image_url, str(i), (bacteriaCenters[i][0], bacteriaCenters[i][1]), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0,0,255), 1)
+            
+            cv2.drawContours(image_url, bacteriaContours, -1, (255,0,0), 1)
+            
+            cv2.imwrite("image_after_delete.jpg",image_url)
+            print("finish written image delete")
+
+            outputImageAfterDeleteUrl = "$START$" + os.getcwd() + "\\image_after_delete.jpg" + "$END$"
+
+            win32file.WriteFile(fileHandle, bytes(outputImageAfterDeleteUrl,"UTF-8"),None)
 
 time.sleep(0.5)
 

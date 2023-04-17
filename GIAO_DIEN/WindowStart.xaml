@@ -221,7 +221,7 @@
 
                         </StackPanel>
                         <Expander Header="Cropping" FontSize="14" Margin="0,0,-0.2,0" IsExpanded="True" Background="#FFEEEEF2"  >
-                            <StackPanel Background="WhiteSmoke" Height="243" Margin="0,0,0.4,0">
+                            <StackPanel Background="WhiteSmoke" Height="327" Margin="0,0,0.4,0">
 
                                 <Grid Height="242" Margin="0,0,0.4,0" >
                                     <Grid.RowDefinitions>
@@ -261,6 +261,8 @@
 
                                     </StackPanel>
                                 </Grid>
+                                <Button Content="Send_Auto" x:Name="Send_AutoBtn" Width="80" HorizontalAlignment="Left" Margin="200,5,0,0" Click="Send_AutoBtn_Click"  />
+                                <Button Content="Delete" x:Name="DeleteBtn" Width="80" HorizontalAlignment="Left" Margin="200,5,0,0" Click="DeleteBtn_Click" />
                             </StackPanel>
                         </Expander>
                         

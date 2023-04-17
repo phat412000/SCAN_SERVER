@@ -146,6 +146,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="AppConstraint.cs" />
+    <Compile Include="backActionChild\DeletePointBackAction.cs" />
     <Compile Include="backActionChild\ImageBackAction.cs" />
     <Compile Include="backActionChild\PolyBackAction.cs" />
     <Compile Include="BacteriaCenter.cs" />

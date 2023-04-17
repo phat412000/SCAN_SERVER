@@ -23,6 +23,7 @@ using Rectangle = System.Windows.Shapes.Rectangle;
 using OpenCvPoint = OpenCvSharp.Point;
 using GLORY_TO_GOD.backActionChild;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace GLORY_TO_GOD
 {
@@ -31,7 +32,13 @@ namespace GLORY_TO_GOD
     /// Interaction logic for MainWindow.xaml
     /// </summary>
     public partial class WindowStart : Window
+
     {
+        double scaleCanvasBe = 6.5;
+        double scaleCanvasNow = 3.5;
+
+        JArray bacteriaCentersJarray;
+
         int ButtonFile_Click_Mode = 0;
         string SelectImgPath;
         Mat SourceImg;
@@ -43,6 +50,9 @@ namespace GLORY_TO_GOD
 
         Stack<BackAction> backStack = new Stack<BackAction>();
         Stack<BackAction> nextStack = new Stack<BackAction>();
+        List<PositionMouse> polyPoints = new List<PositionMouse>();
+        List<PositionMouse> deletePoints = new List<PositionMouse>();
+
 
         private double cropX = 0;
         private double cropY = 0;
@@ -65,6 +75,7 @@ namespace GLORY_TO_GOD
         bool tempConfirm = true;
         bool tempSend = true;
         bool SegmentActivated = false;
+        bool EditActivated = false;
         bool ConfirmActivated = false;
 
 
@@ -242,10 +253,10 @@ namespace GLORY_TO_GOD
                 bitmap.UriSource = new Uri(SelectImgPath);
                 bitmap.EndInit();
 
-                ImgScreen.Width = SourceImg.Width / 6.5;
-                ImgScreen.Height = SourceImg.Height / 6.5;
-                Canvas_On_ImgScreen.Width = SourceImg.Width / 6.5;
-                Canvas_On_ImgScreen.Height = SourceImg.Height / 6.5;
+                ImgScreen.Width = SourceImg.Width / scaleCanvasNow;
+                ImgScreen.Height = SourceImg.Height / scaleCanvasNow;
+                Canvas_On_ImgScreen.Width = SourceImg.Width / scaleCanvasNow;
+                Canvas_On_ImgScreen.Height = SourceImg.Height / scaleCanvasNow;
 
                 ImgScreen.Source = bitmap;
 
@@ -337,15 +348,15 @@ namespace GLORY_TO_GOD
             {
                 size90mm.IsChecked = true;
                 RectangleCheck = false;
-                Heightsize90 = 3180 / 6.5;
-                Widthsize90 = 3180 / 6.5;
+                Heightsize90 = 3180 / scaleCanvasNow;
+                Widthsize90 = 3180 / scaleCanvasNow;
                 radiusCircle = 3180;
                 size100mm.IsChecked = false;
                 size150mm.IsChecked = false;
                 size150x300mm.IsChecked = false;
                 size200x300mm.IsChecked = false;
-                centerCircleX = (SourceImg.Width / 2) / 6.5;
-                centerCircleY = SourceImg.Height / 2 / 6.5;
+                centerCircleX = (SourceImg.Width / 2) / scaleCanvasNow;
+                centerCircleY = SourceImg.Height / 2 / scaleCanvasNow;
                 Ellipse ACircle = new Ellipse()
                 {
 
@@ -737,13 +748,48 @@ namespace GLORY_TO_GOD
         }
 
 
-        ///********************  BIến bacteriaCenters chứa list center position của Bacterias    ***************************************************************************************
- 
+        ///********************  BIến bacteriaCenters chứa list center position: polyPoints của Bacterias    ***************************************************************************************
+
         private void EditBtn_Click(object sender, RoutedEventArgs e)
         {
-            var command = PythonInterface.BuildCommand("edit");
-            string bacteriaCentersString = pythonInterface.SendCommandAndReceiveRawString(command);
-            List<BacteriaCenter> bacteriaCenters = Converter.StringToBacteriaCenters(bacteriaCentersString);
+
+            EditActivated = true;
+
+
+
+
+        }
+
+
+
+
+        private void DeleteBtn_Click(object sender, RoutedEventArgs e)
+        {
+
+
+            string jsonCommand = JsonConvert.SerializeObject(deletePoints);
+
+            var command = PythonInterface.BuildCommand("deletepoint",jsonCommand,currentImagePath);
+            foreach ( var items in jsonCommand)
+            {
+                Console.WriteLine(items);
+            }
+
+            Mat imageAfterDelete = pythonInterface.SendCommand(command);
+
+            if (imageAfterDelete != null)
+            {
+                var bitmapSource = imageAfterDelete.ToBitmapSource();
+
+                bitmapSource.Freeze();
+
+                ImgScreen.Dispatcher.Invoke(new Action(() =>
+                {
+                    ImgScreen.Source = null;
+                    ImgScreen.Source = bitmapSource;
+                }));
+            }
+            Canvas_On_ImgScreen.Children.Clear();
 
 
         }
@@ -788,7 +834,7 @@ namespace GLORY_TO_GOD
                 if (ZoomInRatio == 0)
                 {
                     Mat blackMask = new Mat(SourceImg.Height, SourceImg.Width, MatType.CV_8UC3, Scalar.Black);
-                    Cv2.Circle(blackMask, (int)(centerCircleX * 6.5), (int)(centerCircleY * 6.5), (int)radiusCircle / 2, Scalar.White, -1);
+                    Cv2.Circle(blackMask, (int)(centerCircleX * scaleCanvasNow), (int)(centerCircleY * scaleCanvasNow), (int)radiusCircle / 2, Scalar.White, -1);
                     Cv2.BitwiseAnd(SourceImg, blackMask, ImgAfterAddMask);
                     var converted = Convert(BitmapConverter.ToBitmap(ImgAfterAddMask));
                     ImgScreen.Source = converted;
@@ -832,6 +878,7 @@ namespace GLORY_TO_GOD
             ImgScreen.Source = null;
 
             SegmentActivated = false;
+            EditActivated = false;
            
           
             circleCheck = false;
@@ -846,10 +893,55 @@ namespace GLORY_TO_GOD
         }
         //--------------------------------------------------------------------------------------------------------------------------------------
 
+
+        private void Send_AutoBtn_Click(object sender, RoutedEventArgs e)
+        {
+
+
+            List<(int x, int y)> polyPointList = new List<(int x, int y)>();
+
+
+            polyPointList.Add((0, 0));
+            polyPointList.Add((0, (int)Canvas_On_ImgScreen.Height));
+            polyPointList.Add(((int)Canvas_On_ImgScreen.Height, (int)Canvas_On_ImgScreen.Width));
+            polyPointList.Add(((int)Canvas_On_ImgScreen.Width, 0));
+           
+            
+            string polyListJson = JsonConvert.SerializeObject(polyPointList);
+
+
+            var command = PythonInterface.BuildCommand("send_auto_mode", currentImagePath, polyListJson);
+            dynamic jsonResponse = pythonInterface.SendCommandAndReceiveJson(command);
+
+            bacteriaCentersJarray = jsonResponse["centers"];
+
+            string imageUrl = jsonResponse["image"];
+
+            Mat image = Cv2.ImRead(imageUrl);
+
+            if (image != null)
+            {
+                var bitmapSource = image.ToBitmapSource();
+
+                bitmapSource.Freeze();
+
+                ImgScreen.Dispatcher.Invoke(new Action(() =>
+                {
+                    ImgScreen.Source = null;
+                    ImgScreen.Source = bitmapSource;
+                }));
+            }
+
+
+        }
+
+        //---------------------------------------------------------------------------------------------------------------
+
+
         /// <summary>
         /// HSV CONTROL MANUAL, GRAYSCALE, THRESHOLD _______________________________________________________________
-        
-        
+
+
         //-------------------------------------------------------------------------------------------------------------------------------------- 
         private void PrintBackStack()
         {
@@ -883,8 +975,8 @@ namespace GLORY_TO_GOD
                     if (dataPo is ImageBackAction)
                     {
 
-                            var imageAction = (ImageBackAction)dataPo;
-                            ImgScreen.Source = imageAction.image;
+                        var imageAction = (ImageBackAction)dataPo;
+                        ImgScreen.Source = imageAction.image;
 
 
                     }
@@ -895,10 +987,27 @@ namespace GLORY_TO_GOD
                         SelectTopPolyToDraw();
                         DrawPolies();
                     }
+                    else if (dataPo is DeletePointBackAction)
+                    {
+                        
+                        DeletePolylineAndRectangle();
+                        foreach (var item in backStack)
+                        {
+                            if (item is DeletePointBackAction)
+                                {
+                                var deletePoint = (DeletePointBackAction)item;
+                                DrawdeletePoint(new PositionMouse(deletePoint.mouseX, deletePoint.mouseY));
+                            }
+                        }
+                        
+
+                    }
                 }
                 else
                 {
+                    DeletePolylineAndRectangle();
                     MessageBox.Show("stack empty");
+                    
                 }
 
             }
@@ -917,10 +1026,10 @@ namespace GLORY_TO_GOD
                 BackAction popData = nextStack.Pop();
 
                 backStack.Push(popData);
-               
+
                 if (popData is ImageBackAction)
                 {
-                   
+
                     ImageBackAction imageBackAction = (ImageBackAction)popData;
                     ImgScreen.Source = Convert(BitmapConverter.ToBitmap(ImgAfterAddMask));
 
@@ -929,6 +1038,20 @@ namespace GLORY_TO_GOD
                 else if (popData is PolyBackAction)
                 {
                     DrawPolies();
+                }
+
+                else if (popData is DeletePointBackAction)
+                {
+                    DeletePolylineAndRectangle();
+                    foreach (var item in backStack)
+                    {
+                        if (item is DeletePointBackAction)
+                        {
+                            var deletePoint = (DeletePointBackAction)item;
+                            DrawdeletePoint(new PositionMouse(deletePoint.mouseX, deletePoint.mouseY));
+                        }
+                    }
+                    
                 }
 
             }
@@ -1048,8 +1171,6 @@ namespace GLORY_TO_GOD
             var command = PythonInterface.BuildCommand("segment", SourceImgSegment, jsonCommand);
             Mat image = pythonInterface.SendCommand(command);
 
-           
-
 
             if (image != null)
             {
@@ -1113,7 +1234,7 @@ namespace GLORY_TO_GOD
                                 {//this refer to form in WPF application 
                                     Mat rtnMat = convertToMat(grabResult);
                                     Mat outp = new Mat();
-                                    var faceSize = new OpenCvSharp.Size(rtnMat.Width / 6.5, rtnMat.Height / 6.5);
+                                    var faceSize = new OpenCvSharp.Size(rtnMat.Width / scaleCanvasNow, rtnMat.Height / scaleCanvasNow);
                                     Cv2.Resize(rtnMat, outp, faceSize);
                                     var converted = Convert(BitmapConverter.ToBitmap(rtnMat));
                                     ImgScreen.Source = converted;
@@ -1222,17 +1343,16 @@ namespace GLORY_TO_GOD
 
         int positionMouseX;
         int positionMouseY;
+
+
         private void TopCanvas_MouseMove(object sender, MouseEventArgs e)
         {
 
-            if (SegmentActivated == true)
-            {
                 positionMouseX = (int)e.GetPosition(ImgScreen_Canvas).X;
                 positionMouseY = (int)e.GetPosition(ImgScreen_Canvas).Y;
 
                 teets.Text = "X: " + positionMouseX + "," + "Y: " + positionMouseY;
 
-            }
 
         }
 
@@ -1240,16 +1360,17 @@ namespace GLORY_TO_GOD
 
 
         int currentPolyName = 1;
-        List<PositionMouse> polyPoints = new List<PositionMouse>();   
+
         private void TopCanvas_MouseDown(object sender, MouseButtonEventArgs e)
         {
 
-                        
-
+           if (SegmentActivated == true)
+            {
                 PolyBackAction polyBackAction = new PolyBackAction();
                 polyBackAction.polyName = currentPolyName;
                 polyBackAction.mouseX = positionMouseX;
                 polyBackAction.mouseY = positionMouseY;
+
 
                 backStack.Push(polyBackAction);
 
@@ -1259,14 +1380,42 @@ namespace GLORY_TO_GOD
                 PrintBackStack();
 
                 DrawPolies();
+            }
 
-           
+            if (EditActivated == true)
+            {
+                DeletePointBackAction pointDeleted = new DeletePointBackAction();
+
+                pointDeleted.mouseX = positionMouseX;
+                pointDeleted.mouseY = positionMouseY;
+
+
+                backStack.Push(pointDeleted);
+
+                PositionMouse positionMouse = new PositionMouse(positionMouseX, positionMouseY);
+                deletePoints.Add(positionMouse);
+
+                DrawdeletePoint(positionMouse);
+
+            }
+
 
 
 
 
         }
-
+        private void DrawdeletePoint(PositionMouse positionMouse)
+        {
+            Ellipse smallDot = new Ellipse()
+            {
+                Fill = System.Windows.Media.Brushes.Yellow,
+                Width = 7,
+                Height = 7
+            };
+            Canvas.SetLeft(smallDot, positionMouse.posx);
+            Canvas.SetTop(smallDot, positionMouse.posy);
+            Canvas_On_ImgScreen.Children.Add(smallDot);
+        }
         private void SelectTopPolyToDraw()
         {
 
@@ -1289,7 +1438,7 @@ namespace GLORY_TO_GOD
 
             foreach (var item in Canvas_On_ImgScreen.Children)
             {
-                if (item is Polyline || item is Rectangle)
+                if (item is Polyline || item is Rectangle || item is Ellipse)
                 {
                     willBeRemovedItems.Add((UIElement)item);
                 }
@@ -1300,9 +1449,6 @@ namespace GLORY_TO_GOD
                 Canvas_On_ImgScreen.Children.Remove(item);
             }
         }
-
-
-
 
 
         private void DrawPolies()
@@ -1375,7 +1521,7 @@ namespace GLORY_TO_GOD
         private void CropPolies()
         {
 
-            double scaleRatio = 6.5;
+            double scaleRatio = scaleCanvasNow;
             ImgAfterSegment = new Mat();
             Mat blackMask = new Mat(SourceImg.Height, SourceImg.Width, MatType.CV_8UC3, Scalar.Black);
 

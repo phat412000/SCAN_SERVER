@@ -1,4 +1,5 @@
-﻿using OpenCvSharp;
+﻿using Newtonsoft.Json;
+using OpenCvSharp;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -85,6 +86,21 @@ namespace Pythonzxrr
             Mat imageReturn = Cv2.ImRead(pythonMessage);
 
             return imageReturn;
+        }
+
+        public dynamic SendCommandAndReceiveJson(string command)
+        {
+            using (var stream = new MemoryStream())
+            using (var writer = new BinaryWriter(stream))
+            {
+                writer.Write(command);
+                pipeServerStream.Write(stream.ToArray(), 0, stream.ToArray().Length);
+            }
+
+            var pythonMessage = readingMessageFromPython();
+
+
+            return (dynamic)JsonConvert.DeserializeObject(pythonMessage);
         }
 
         public string SendCommandAndReceiveRawString(string command)
