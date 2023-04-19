@@ -261,6 +261,9 @@
     <Resource Include="Image\icons8-ai-96.png" />
   </ItemGroup>
   <ItemGroup>
+    <Resource Include="python_source\requirements.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
     <Content Include="python_source\scanClass.py">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
