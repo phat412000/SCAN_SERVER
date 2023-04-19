@@ -256,18 +256,18 @@
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" Grid.Row="2" Margin="0,0,0.4,-0.4" VerticalAlignment="Top" Height="90">
                                         <Button Content="Send" x:Name="SendCropImgBtn" Width="60" HorizontalAlignment="Left" Margin="0" Click="SendCropImgBtn_Click"  />
-                                        <Button Content="Confirm" x:Name="ConfirmBtn" Width="60" HorizontalAlignment="Left" Margin="0,5,0,0" Click="ConfirmBtn_Click"  />
                                         <Button Content="Clear" x:Name="ClearBtn" Width="60" HorizontalAlignment="Left" Margin="0,5,0,0" Click="ClearBtn_Click"  />
 
                                     </StackPanel>
                                 </Grid>
-                                <Button Content="Send_Auto" x:Name="Send_AutoBtn" Width="80" HorizontalAlignment="Left" Margin="200,5,0,0" Click="Send_AutoBtn_Click"  />
+                                <Button Content="Send Auto" x:Name="Send_AutoBtn" Width="80" HorizontalAlignment="Left" Margin="200,5,0,0" Click="Send_AutoBtn_Click"  />
                                 <Button Content="Delete" x:Name="DeleteBtn" Width="80" HorizontalAlignment="Left" Margin="200,5,0,0" Click="DeleteBtn_Click" />
+                                <Button Content="Add bacteria" x:Name="Add_bacteriaBtn" Width="105" HorizontalAlignment="Left" Margin="200,5,0,0" Click="Add_bacteriaBtn_Click"  />
                             </StackPanel>
                         </Expander>
-                        
-                        
-                        
+
+
+
                     </StackPanel>
                 </ScrollViewer>
             </Border>

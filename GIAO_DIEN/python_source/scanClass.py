@@ -78,13 +78,16 @@ class ScanClass:
 
 
 
-    def CountColoni(self,labelsImg,roiandgray,roi, segmentcontours):
+    def CountColoni(self,labelsImg,roiandgray,roi, segmentcontours, imageOrginal):
         countBacteria    = 0
         bacteriaColonies = []
         bacteriaCenters  = []
+        bacteriaCentersScale = []
 
         finalmage = roi.copy()
+        imageOrginal = imageOrginal.copy()
         bacteriaContours = []
+        bacteriaContoursScale = []
         #print(finalmage.shape)
 
         uniqueLabels = np.unique(labelsImg)
@@ -102,23 +105,31 @@ class ScanClass:
 
             biggestContourInAzone = max(cnts, key=cv2.contourArea)
 
+            biggestContourInAzonescale = np.array(biggestContourInAzone *  [[3.6,3.55]])
+            biggestContourInAzonescale =  np.round(biggestContourInAzonescale).astype(int)
+
+
             #print("contour counts: ", len(cnts))
 
             currentContourSize = cv2.contourArea(biggestContourInAzone)
 
             centerOfContour = cv2.moments(biggestContourInAzone)
+            if (centerOfContour['m00'] == 0):
+                centerOfContour['m00'] = 0.001
 
             centerX = int(centerOfContour['m10']/centerOfContour['m00'])
             centerY = int(centerOfContour['m01']/centerOfContour['m00'])
+
             centerOfBacteria = (centerX,centerY)
-            bacteriaCenters.append([centerX,centerY])
+            centerOfBacteriascale = (int(centerX * 3.6), int(centerY * 3.55))
+
+            bacteriaCenters.append([centerX, centerY])
+            bacteriaCentersScale = ([centerOfBacteriascale])
 
             isInsideContour = False
 
                 
             #cv2.drawContours(finalmage,segmentcontours, -1, (0,255,0), 3)
-
-            print(segmentcontours)
 
             for segmentContour in segmentcontours:
 
@@ -133,13 +144,18 @@ class ScanClass:
             if not isInsideContour:
                 continue
 
-      
+            
             cv2.putText(finalmage,str(countBacteria), centerOfBacteria, cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0,0,255), 1)
-            
-            cv2.drawContours(finalmage,[biggestContourInAzone], -1, (255,0,0), 1)
+            cv2.putText(imageOrginal, str(countBacteria), centerOfBacteriascale, cv2.FONT_HERSHEY_SIMPLEX, 1.1, (0,0,255), 2)
 
-            bacteriaContours.append(biggestContourInAzone)
             
+            bacteriaContours.append(biggestContourInAzone)
+            cv2.drawContours(finalmage, bacteriaContours , -1, (255,0,0), 1)
+            
+            
+            bacteriaContoursScale.append(biggestContourInAzonescale)
+            cv2.drawContours(imageOrginal, bacteriaContoursScale,-1, (255,0,0), 2)
+  
 
             countBacteria += 1
 
@@ -147,16 +163,18 @@ class ScanClass:
             showed = ("bacteria id: " + str(countBacteria) + " size: " + str(currentContourSize) + " position: " + str(centerOfBacteria) )
             bacteriaColonies.append(centerOfBacteria)
             
+        print("Scaled biggestcontour", biggestContourInAzonescale)  
+        print("biggestcontour", biggestContourInAzone)
+
             
-            
 
-        return finalmage, bacteriaCenters, countBacteria, bacteriaContours
-
+        return finalmage, bacteriaCenters, countBacteria, bacteriaContours, imageOrginal, bacteriaCentersScale, bacteriaContoursScale
 
 
 
 
-        
+
+     
 
 
         

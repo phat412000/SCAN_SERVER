@@ -50,8 +50,8 @@ namespace GLORY_TO_GOD
 
         Stack<BackAction> backStack = new Stack<BackAction>();
         Stack<BackAction> nextStack = new Stack<BackAction>();
-        List<PositionMouse> polyPoints = new List<PositionMouse>();
-        List<PositionMouse> deletePoints = new List<PositionMouse>();
+
+
 
 
         private double cropX = 0;
@@ -74,9 +74,18 @@ namespace GLORY_TO_GOD
 
         bool tempConfirm = true;
         bool tempSend = true;
-        bool SegmentActivated = false;
-        bool EditActivated = false;
-        bool ConfirmActivated = false;
+
+        enum State
+        {
+            IDLE,
+            EDIT,
+            SEND_SEGMENT_MODE,
+            SEND_AUTO_MODE,
+            SEGMENT,
+            ADD_SEGMENT
+        }
+
+        State applicationState = State.IDLE;
 
 
         private DispatcherTimer Timer1;
@@ -741,9 +750,21 @@ namespace GLORY_TO_GOD
 
         private void CountBtn_Click(object sender, RoutedEventArgs e)
         {
-            var command = PythonInterface.BuildCommand("count");
+            //var command = PythonInterface.BuildCommand("count");
+            //string total = pythonInterface.SendCommandAndReceiveRawString(command);
+            //Total_Count_Value.Text = total;
+
+            
+
+            var statefulPoints = GenerateStatefulPoints();
+
+            string addPointsJson = JsonConvert.SerializeObject(statefulPoints);
+
+
+            var command = PythonInterface.BuildCommand("count", addPointsJson, currentImagePath);
             string total = pythonInterface.SendCommandAndReceiveRawString(command);
             Total_Count_Value.Text = total;
+
 
         }
 
@@ -753,7 +774,7 @@ namespace GLORY_TO_GOD
         private void EditBtn_Click(object sender, RoutedEventArgs e)
         {
 
-            EditActivated = true;
+            applicationState = State.EDIT;
 
 
 
@@ -761,110 +782,229 @@ namespace GLORY_TO_GOD
         }
 
 
+        private List<StatefulPointBackAction> GenerateStatefulPoints()
+        {
+            List<StatefulPointBackAction> statefulPoints = new List<StatefulPointBackAction>();
+            
+            foreach (var item in backStack)
+            {
+                if (item is StatefulPointBackAction)
+                {
+                    Console.WriteLine(item);
+                }
+            }
 
 
+            foreach (var item in backStack.Reverse())
+            {
+                if (item is StatefulPointBackAction)
+                {
+                    statefulPoints.Add((StatefulPointBackAction)item);
+                }
+            }
+
+            return statefulPoints;
+        }
+
+
+
+
+
+
+
+        private void Add_bacteriaBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (applicationState == State.EDIT)
+            {
+
+                List<BackAction> listBackActions = backStack.ToList();
+                for (int i = 0; i < listBackActions.Count; i++)
+                {
+                    if (listBackActions[i] is StatefulPointBackAction)
+                    {
+                        StatefulPointBackAction statePoint = (StatefulPointBackAction)backStack.ElementAt(i);
+
+                        if (statePoint.action == "noaction")
+                        {
+                            statePoint.action = "add";
+                        }
+                    }
+                }
+
+                SendProcessPoints();
+                
+
+            }
+            applicationState = State.IDLE;
+
+        }
+
+
+        private void SendProcessPoints()
+        {
+            //if (applicationState == State.SEND_AUTO_MODE)
+            //{
+            //    var statefulPoints = GenerateStatefulPoints();
+
+            //    string addPointsJson = JsonConvert.SerializeObject(statefulPoints);
+
+
+            //    var command = PythonInterface.BuildCommand("processpoint", addPointsJson, currentImagePath);
+
+            //    dynamic jsonResponse_processpoint = pythonInterface.SendCommandAndReceiveJson(command);
+
+            //    string total = jsonResponse_processpoint["total"];
+
+            //    Total_Count_Value.Text = total;
+
+            //    string imageUrl = jsonResponse_processpoint["image"];
+
+            //    Mat image = Cv2.ImRead(imageUrl);
+
+            //    if (image != null)
+            //    {
+            //        var bitmapSource = image.ToBitmapSource();
+
+            //        bitmapSource.Freeze();
+
+            //        ImgScreen.Dispatcher.Invoke(new Action(() =>
+            //        {
+            //            ImgScreen.Source = null;
+            //            ImgScreen.Source = bitmapSource;
+            //        }));
+            //    }
+            //    Canvas_On_ImgScreen.Children.Clear();
+
+            //}
+            
+                var statefulPoints = GenerateStatefulPoints();
+
+                string addPointsJson = JsonConvert.SerializeObject(statefulPoints);
+
+
+                var command = PythonInterface.BuildCommand("processpoint", addPointsJson, SourceImgSegment);
+
+                dynamic jsonResponse_processpoint = pythonInterface.SendCommandAndReceiveJson(command);
+
+                string total = jsonResponse_processpoint["total"];
+
+                Total_Count_Value.Text = total;
+
+                string imageUrl = jsonResponse_processpoint["image"];
+
+                Mat image = Cv2.ImRead(imageUrl);
+
+                if (image != null)
+                {
+                    var bitmapSource = image.ToBitmapSource();
+
+                    bitmapSource.Freeze();
+
+                    ImgScreen.Dispatcher.Invoke(new Action(() =>
+                    {
+                        ImgScreen.Source = null;
+                        ImgScreen.Source = bitmapSource;
+                    }));
+                }
+                Canvas_On_ImgScreen.Children.Clear();
+
+            
+        }
+
+  
         private void DeleteBtn_Click(object sender, RoutedEventArgs e)
         {
-
-
-            string jsonCommand = JsonConvert.SerializeObject(deletePoints);
-
-            var command = PythonInterface.BuildCommand("deletepoint",jsonCommand,currentImagePath);
-            foreach ( var items in jsonCommand)
+            if (applicationState == State.EDIT)
             {
-                Console.WriteLine(items);
-            }
-
-            Mat imageAfterDelete = pythonInterface.SendCommand(command);
-
-            if (imageAfterDelete != null)
-            {
-                var bitmapSource = imageAfterDelete.ToBitmapSource();
-
-                bitmapSource.Freeze();
-
-                ImgScreen.Dispatcher.Invoke(new Action(() =>
+                List<BackAction> listBackActions = backStack.ToList();
+                for (int i = 0; i < listBackActions.Count; i++)
                 {
-                    ImgScreen.Source = null;
-                    ImgScreen.Source = bitmapSource;
-                }));
+                    if (listBackActions[i] is StatefulPointBackAction)
+                    {
+                        StatefulPointBackAction statePoint = (StatefulPointBackAction)backStack.ElementAt(i);
+
+                        if (statePoint.action == "noaction")
+                        {
+                            statePoint.action = "delete";
+                        }
+                    }
+                    SendProcessPoints();
+                }
             }
-            Canvas_On_ImgScreen.Children.Clear();
 
-
+            
         }
 
         ///***********************************************************************************************************
         ///
 
-        private void ConfirmBtn_Click(object sender, RoutedEventArgs e)
-        {
+        //private void ConfirmBtn_Click(object sender, RoutedEventArgs e)
+        //{
 
-            ConfirmActivated = true;
 
-            var imageActionInTam = new ImageBackAction();
-            imageActionInTam.image = ImgScreen.Source as BitmapImage;
-            backStack.Push(imageActionInTam);
-
+        //    var imageActionInTam = new ImageBackAction();
+        //    imageActionInTam.image = ImgScreen.Source as BitmapImage;
+        //    backStack.Push(imageActionInTam);
 
 
 
 
-            PrintBackStack();
-            ImgAfterAddMask = new Mat();
-            if (circleCheck == true)
-            {
-                if (ZoomInRatio > 0)
-                {
-                    Mat blackMask = new Mat(SourceImg.Height, SourceImg.Width, MatType.CV_8UC3, Scalar.Black);
-                    Cv2.Circle(blackMask, (int)(centerCircleX * Math.Pow(1.1, ZoomInRatio)), (int)(centerCircleY * Math.Pow(1.1, ZoomInRatio)), (int)radiusCircle / 2, Scalar.White, -1);
-                    Cv2.BitwiseAnd(SourceImg, blackMask, ImgAfterAddMask);
-                    var converted = Convert(BitmapConverter.ToBitmap(ImgAfterAddMask));
-                    ImgScreen.Source = converted;
 
-                }
-                if (ZoomOutRatio > 0)
-                {
-                    Mat blackMask = new Mat(SourceImg.Height, SourceImg.Width, MatType.CV_8UC3, Scalar.Black);
-                    Cv2.Circle(blackMask, (int)(centerCircleX * Math.Pow(1 / 1.1, ZoomOutRatio)), (int)(centerCircleY * Math.Pow(1 / 1.1, ZoomOutRatio)), (int)radiusCircle / 2, Scalar.White, -1);
-                    Cv2.BitwiseAnd(SourceImg, blackMask, ImgAfterAddMask);
-                    var converted = Convert(BitmapConverter.ToBitmap(ImgAfterAddMask));
-                    ImgScreen.Source = converted;
-                }
-                if (ZoomInRatio == 0)
-                {
-                    Mat blackMask = new Mat(SourceImg.Height, SourceImg.Width, MatType.CV_8UC3, Scalar.Black);
-                    Cv2.Circle(blackMask, (int)(centerCircleX * scaleCanvasNow), (int)(centerCircleY * scaleCanvasNow), (int)radiusCircle / 2, Scalar.White, -1);
-                    Cv2.BitwiseAnd(SourceImg, blackMask, ImgAfterAddMask);
-                    var converted = Convert(BitmapConverter.ToBitmap(ImgAfterAddMask));
-                    ImgScreen.Source = converted;
+        //    PrintBackStack();
+        //    ImgAfterAddMask = new Mat();
+        //    if (circleCheck == true)
+        //    {
+        //        if (ZoomInRatio > 0)
+        //        {
+        //            Mat blackMask = new Mat(SourceImg.Height, SourceImg.Width, MatType.CV_8UC3, Scalar.Black);
+        //            Cv2.Circle(blackMask, (int)(centerCircleX * Math.Pow(1.1, ZoomInRatio)), (int)(centerCircleY * Math.Pow(1.1, ZoomInRatio)), (int)radiusCircle / 2, Scalar.White, -1);
+        //            Cv2.BitwiseAnd(SourceImg, blackMask, ImgAfterAddMask);
+        //            var converted = Convert(BitmapConverter.ToBitmap(ImgAfterAddMask));
+        //            ImgScreen.Source = converted;
 
-                    size90mm.IsChecked = false;
+        //        }
+        //        if (ZoomOutRatio > 0)
+        //        {
+        //            Mat blackMask = new Mat(SourceImg.Height, SourceImg.Width, MatType.CV_8UC3, Scalar.Black);
+        //            Cv2.Circle(blackMask, (int)(centerCircleX * Math.Pow(1 / 1.1, ZoomOutRatio)), (int)(centerCircleY * Math.Pow(1 / 1.1, ZoomOutRatio)), (int)radiusCircle / 2, Scalar.White, -1);
+        //            Cv2.BitwiseAnd(SourceImg, blackMask, ImgAfterAddMask);
+        //            var converted = Convert(BitmapConverter.ToBitmap(ImgAfterAddMask));
+        //            ImgScreen.Source = converted;
+        //        }
+        //        if (ZoomInRatio == 0)
+        //        {
+        //            Mat blackMask = new Mat(SourceImg.Height, SourceImg.Width, MatType.CV_8UC3, Scalar.Black);
+        //            Cv2.Circle(blackMask, (int)(centerCircleX * scaleCanvasNow), (int)(centerCircleY * scaleCanvasNow), (int)radiusCircle / 2, Scalar.White, -1);
+        //            Cv2.BitwiseAnd(SourceImg, blackMask, ImgAfterAddMask);
+        //            var converted = Convert(BitmapConverter.ToBitmap(ImgAfterAddMask));
+        //            ImgScreen.Source = converted;
 
-                    var saveFileName = "imgcropped.jpg";
-                    Console.WriteLine(saveFileName);
-                    ImgAfterAddMask.SaveImage(saveFileName);
+        //            size90mm.IsChecked = false;
 
-                    currentImagePath = Directory.GetCurrentDirectory() + "\\" + saveFileName;
+        //            var saveFileName = "imgcropped.jpg";
+        //            Console.WriteLine(saveFileName);
+        //            ImgAfterAddMask.SaveImage(saveFileName);
 
-                }
+        //            currentImagePath = Directory.GetCurrentDirectory() + "\\" + saveFileName;
 
-            }
-            if (RectangleCheck == true)
-            {
-                Mat blackMask = new Mat(SourceImg.Height, SourceImg.Width, MatType.CV_8UC3, Scalar.Black);
-                Cv2.Rectangle(blackMask, rectangle, Scalar.White, -1);
-                Cv2.BitwiseAnd(SourceImg, blackMask, ImgAfterAddMask);
-                var converted = Convert(BitmapConverter.ToBitmap(ImgAfterAddMask));
-                ImgScreen.Source = converted;
-            }
+        //        }
 
-            var imageActionInOutside = new ImageBackAction();
-            imageActionInOutside.image = ImgScreen.Source as BitmapImage;
-            backStack.Push(imageActionInOutside);
+        //    }
+        //    if (RectangleCheck == true)
+        //    {
+        //        Mat blackMask = new Mat(SourceImg.Height, SourceImg.Width, MatType.CV_8UC3, Scalar.Black);
+        //        Cv2.Rectangle(blackMask, rectangle, Scalar.White, -1);
+        //        Cv2.BitwiseAnd(SourceImg, blackMask, ImgAfterAddMask);
+        //        var converted = Convert(BitmapConverter.ToBitmap(ImgAfterAddMask));
+        //        ImgScreen.Source = converted;
+        //    }
+
+        //    var imageActionInOutside = new ImageBackAction();
+        //    imageActionInOutside.image = ImgScreen.Source as BitmapImage;
+        //    backStack.Push(imageActionInOutside);
 
 
-        }
+        //}
         //----------------------------------------------------------------------------------------------------------------------------------------
         private void ClearBtn_Click(object sender, RoutedEventArgs e)
         {
@@ -877,18 +1017,8 @@ namespace GLORY_TO_GOD
 
             ImgScreen.Source = null;
 
-            SegmentActivated = false;
-            EditActivated = false;
-           
-          
-            circleCheck = false;
+            applicationState = State.IDLE;
 
-            if (circleCheck == false)
-            {
-                size90mm.IsChecked = false;
-                size100mm.IsChecked = false;
-                size150mm.IsChecked = false;
-            }
 
         }
         //--------------------------------------------------------------------------------------------------------------------------------------
@@ -896,41 +1026,48 @@ namespace GLORY_TO_GOD
 
         private void Send_AutoBtn_Click(object sender, RoutedEventArgs e)
         {
+            applicationState = State.SEND_AUTO_MODE;
 
-
-            List<(int x, int y)> polyPointList = new List<(int x, int y)>();
-
-
-            polyPointList.Add((0, 0));
-            polyPointList.Add((0, (int)Canvas_On_ImgScreen.Height));
-            polyPointList.Add(((int)Canvas_On_ImgScreen.Height, (int)Canvas_On_ImgScreen.Width));
-            polyPointList.Add(((int)Canvas_On_ImgScreen.Width, 0));
-           
-            
-            string polyListJson = JsonConvert.SerializeObject(polyPointList);
-
-
-            var command = PythonInterface.BuildCommand("send_auto_mode", currentImagePath, polyListJson);
-            dynamic jsonResponse = pythonInterface.SendCommandAndReceiveJson(command);
-
-            bacteriaCentersJarray = jsonResponse["centers"];
-
-            string imageUrl = jsonResponse["image"];
-
-            Mat image = Cv2.ImRead(imageUrl);
-
-            if (image != null)
+            if (applicationState == State.SEND_AUTO_MODE)
             {
-                var bitmapSource = image.ToBitmapSource();
+                List<(int x, int y)> polyPointList = new List<(int x, int y)>();
 
-                bitmapSource.Freeze();
 
-                ImgScreen.Dispatcher.Invoke(new Action(() =>
+                polyPointList.Add((0, 0));
+                polyPointList.Add((0, (int)Canvas_On_ImgScreen.Height));
+                polyPointList.Add(((int)Canvas_On_ImgScreen.Height, (int)Canvas_On_ImgScreen.Width));
+                polyPointList.Add(((int)Canvas_On_ImgScreen.Width, 0));
+
+
+                string polyListJson = JsonConvert.SerializeObject(polyPointList);
+
+
+                var command = PythonInterface.BuildCommand("send_auto_mode", currentImagePath, polyListJson);
+                dynamic jsonResponse = pythonInterface.SendCommandAndReceiveJson(command);
+
+                bacteriaCentersJarray = jsonResponse["centers"];
+
+                string imageUrl = jsonResponse["image"];
+
+                Mat image = Cv2.ImRead(imageUrl);
+
+                if (image != null)
                 {
-                    ImgScreen.Source = null;
-                    ImgScreen.Source = bitmapSource;
-                }));
+                    var bitmapSource = image.ToBitmapSource();
+
+                    bitmapSource.Freeze();
+
+                    ImgScreen.Dispatcher.Invoke(new Action(() =>
+                    {
+                        ImgScreen.Source = null;
+                        ImgScreen.Source = bitmapSource;
+                    }));
+                }
+
+
             }
+     
+
 
 
         }
@@ -987,21 +1124,20 @@ namespace GLORY_TO_GOD
                         SelectTopPolyToDraw();
                         DrawPolies();
                     }
-                    else if (dataPo is DeletePointBackAction)
+                    else if (dataPo is StatefulPointBackAction)
                     {
-                        
                         DeletePolylineAndRectangle();
+
                         foreach (var item in backStack)
                         {
-                            if (item is DeletePointBackAction)
-                                {
-                                var deletePoint = (DeletePointBackAction)item;
-                                DrawdeletePoint(new PositionMouse(deletePoint.mouseX, deletePoint.mouseY));
+                            if (item is StatefulPointBackAction)
+                            {
+                                var unstatePoint = (StatefulPointBackAction)item;
+                                DrawStatefulPoints(unstatePoint);
                             }
                         }
-                        
-
                     }
+        
                 }
                 else
                 {
@@ -1039,20 +1175,20 @@ namespace GLORY_TO_GOD
                 {
                     DrawPolies();
                 }
-
-                else if (popData is DeletePointBackAction)
+                else if (popData is StatefulPointBackAction)
                 {
                     DeletePolylineAndRectangle();
+
                     foreach (var item in backStack)
                     {
-                        if (item is DeletePointBackAction)
+                        if (item is StatefulPointBackAction)
                         {
-                            var deletePoint = (DeletePointBackAction)item;
-                            DrawdeletePoint(new PositionMouse(deletePoint.mouseX, deletePoint.mouseY));
+                            var unstatePoint = (StatefulPointBackAction)item;
+                            DrawStatefulPoints(unstatePoint);
                         }
                     }
-                    
                 }
+
 
             }
             PrintBackStack();
@@ -1130,60 +1266,67 @@ namespace GLORY_TO_GOD
         Mat ImgAfterSegment;
         private void SendCropImgBtn_Click(object sender, RoutedEventArgs e)
         {
+            applicationState = State.SEND_SEGMENT_MODE;
 
-            if (tempSend == true)
+            if (applicationState == State.SEND_SEGMENT_MODE)
             {
-                var imageActionInLocal = new ImageBackAction();
-                imageActionInLocal.image = ImgScreen.Source as BitmapImage;
-                backStack.Push(imageActionInLocal);
-
-                tempSend = false;
-            }
-            var imageActionInTam = new ImageBackAction();
-            imageActionInTam.image = ImgScreen.Source as BitmapImage;
-            backStack.Push(imageActionInTam);
-
-            CropPolies();
-            PrintBackStack();
-
-            var imgAferSecmented = Convert(BitmapConverter.ToBitmap(ImgAfterSegment));
-            ImgScreen.Source = imgAferSecmented;
-
-            var saveFileName = "imgcanvas.jpg";
-            ImgAfterSegment.SaveImage(saveFileName);
-            SourceImgSegment = Directory.GetCurrentDirectory() + "\\" + saveFileName;
-
-            DeletePolylineAndRectangle();
-
-            List<BackAction> polyPointList = new List<BackAction>();
-
-            foreach (BackAction backAction in backStack)
-            {
-                if (backAction is PolyBackAction)
+                if (tempSend == true)
                 {
-                    polyPointList.Add(backAction);
+                    var imageActionInLocal = new ImageBackAction();
+                    imageActionInLocal.image = ImgScreen.Source as BitmapImage;
+                    backStack.Push(imageActionInLocal);
+
+                    tempSend = false;
+                }
+                var imageActionInTam = new ImageBackAction();
+                imageActionInTam.image = ImgScreen.Source as BitmapImage;
+                backStack.Push(imageActionInTam);
+
+                CropPolies();
+                PrintBackStack();
+
+                var imgAferSecmented = Convert(BitmapConverter.ToBitmap(ImgAfterSegment));
+                ImgScreen.Source = imgAferSecmented;
+
+                var saveFileName = "imgcanvas.jpg";
+                ImgAfterSegment.SaveImage(saveFileName);
+                SourceImgSegment = Directory.GetCurrentDirectory() + "\\" + saveFileName;
+
+                DeletePolylineAndRectangle();
+
+                List<BackAction> polyPointList = new List<BackAction>();
+
+                foreach (BackAction backAction in backStack)
+                {
+                    if (backAction is PolyBackAction)
+                    {
+                        polyPointList.Add(backAction);
+                    }
+                }
+
+                string jsonCommand = JsonConvert.SerializeObject(polyPointList);
+
+
+                var command = PythonInterface.BuildCommand("segment", SourceImgSegment, jsonCommand);
+                Mat image = pythonInterface.SendCommand(command);
+
+
+                if (image != null)
+                {
+                    var bitmapSource = image.ToBitmapSource();
+
+                    bitmapSource.Freeze();
+
+                    ImgScreen.Dispatcher.Invoke(new Action(() =>
+                    {
+                        ImgScreen.Source = null;
+                        ImgScreen.Source = bitmapSource;
+                    }));
                 }
             }
 
-            string jsonCommand = JsonConvert.SerializeObject(polyPointList);
-
-
-            var command = PythonInterface.BuildCommand("segment", SourceImgSegment, jsonCommand);
-            Mat image = pythonInterface.SendCommand(command);
-
-
-            if (image != null)
-            {
-                var bitmapSource = image.ToBitmapSource();
-
-                bitmapSource.Freeze();
-
-                ImgScreen.Dispatcher.Invoke(new Action(() =>
-                {
-                    ImgScreen.Source = null;
-                    ImgScreen.Source = bitmapSource;
-                }));
-            }
+           
+            
         }
 
 
@@ -1335,9 +1478,21 @@ namespace GLORY_TO_GOD
 
         private void SegmentBtn_Click(object sender, RoutedEventArgs e)
         {
-            SegmentActivated = true;
-        }
+            while (true)        
+            {
+                if (applicationState == State.SEND_AUTO_MODE)
+                {
+                    break;
 
+                }
+                else {
+                    applicationState = State.SEGMENT;
+                    break;
+                }
+            }
+            
+            
+        }
 
 
 
@@ -1348,10 +1503,10 @@ namespace GLORY_TO_GOD
         private void TopCanvas_MouseMove(object sender, MouseEventArgs e)
         {
 
-                positionMouseX = (int)e.GetPosition(ImgScreen_Canvas).X;
-                positionMouseY = (int)e.GetPosition(ImgScreen_Canvas).Y;
+            positionMouseX = (int)e.GetPosition(ImgScreen).X;
+            positionMouseY = (int)e.GetPosition(ImgScreen).Y;
 
-                teets.Text = "X: " + positionMouseX + "," + "Y: " + positionMouseY;
+            teets.Text = "X: " + positionMouseX + "," + "Y: " + positionMouseY;
 
 
         }
@@ -1363,9 +1518,10 @@ namespace GLORY_TO_GOD
 
         private void TopCanvas_MouseDown(object sender, MouseButtonEventArgs e)
         {
+            List<PositionMouse> polyPoints = new List<PositionMouse>();
 
-           if (SegmentActivated == true)
-            {
+            if (applicationState == State.SEGMENT)
+           {
                 PolyBackAction polyBackAction = new PolyBackAction();
                 polyBackAction.polyName = currentPolyName;
                 polyBackAction.mouseX = positionMouseX;
@@ -1380,22 +1536,24 @@ namespace GLORY_TO_GOD
                 PrintBackStack();
 
                 DrawPolies();
-            }
+           }
 
-            if (EditActivated == true)
+            if (applicationState == State.EDIT)
             {
-                DeletePointBackAction pointDeleted = new DeletePointBackAction();
-
-                pointDeleted.mouseX = positionMouseX;
-                pointDeleted.mouseY = positionMouseY;
 
 
-                backStack.Push(pointDeleted);
+                StatefulPointBackAction unstatepoint = new StatefulPointBackAction();
+    
+                unstatepoint.mouseX = positionMouseX;
+                unstatepoint.mouseY = positionMouseY;
+
+
+                backStack.Push(unstatepoint);
 
                 PositionMouse positionMouse = new PositionMouse(positionMouseX, positionMouseY);
-                deletePoints.Add(positionMouse);
 
-                DrawdeletePoint(positionMouse);
+
+                DrawStatefulPoints(unstatepoint);               
 
             }
 
@@ -1404,16 +1562,31 @@ namespace GLORY_TO_GOD
 
 
         }
-        private void DrawdeletePoint(PositionMouse positionMouse)
+        private void DrawStatefulPoints(StatefulPointBackAction statefulPointBackAction)
         {
+            SolidColorBrush color = Brushes.Red;
+
+            if (statefulPointBackAction.action == "delete")
+            {
+                color = Brushes.Red;
+            }else
+            if (statefulPointBackAction.action == "add")
+            {
+                color = Brushes.Green;
+            }
+            else
+            {
+                color = Brushes.Yellow;
+            }
+
             Ellipse smallDot = new Ellipse()
             {
-                Fill = System.Windows.Media.Brushes.Yellow,
-                Width = 7,
-                Height = 7
+                Fill = color,
+                Width = 9,
+                Height = 9
             };
-            Canvas.SetLeft(smallDot, positionMouse.posx);
-            Canvas.SetTop(smallDot, positionMouse.posy);
+            Canvas.SetLeft(smallDot, statefulPointBackAction.mouseX);
+            Canvas.SetTop(smallDot, statefulPointBackAction.mouseY);
             Canvas_On_ImgScreen.Children.Add(smallDot);
         }
         private void SelectTopPolyToDraw()
@@ -1426,6 +1599,7 @@ namespace GLORY_TO_GOD
                     PolyBackAction polyBackAction = (PolyBackAction)backAction;
                     currentPolyName = polyBackAction.polyName;
                     break;
+                   
                 }
             }
         }
@@ -1449,6 +1623,7 @@ namespace GLORY_TO_GOD
                 Canvas_On_ImgScreen.Children.Remove(item);
             }
         }
+
 
 
         private void DrawPolies()
