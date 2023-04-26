@@ -74,6 +74,8 @@ namespace GLORY_TO_GOD
 
         bool tempConfirm = true;
         bool tempSend = true;
+        
+
 
         enum State
         {
@@ -84,8 +86,21 @@ namespace GLORY_TO_GOD
             SEGMENT,
             ADD_SEGMENT
         }
+        enum State_State
+        {
+            
+        }
+
+        
+        
 
         State applicationState = State.IDLE;
+
+
+        
+
+
+
 
 
         private DispatcherTimer Timer1;
@@ -147,6 +162,7 @@ namespace GLORY_TO_GOD
 
         private void FileButton_Click(object sender, RoutedEventArgs e)
         {
+
             ButtonFile_Click_Mode += 1; 
 
             if (ButtonFile_Click_Mode == 1)
@@ -242,6 +258,20 @@ namespace GLORY_TO_GOD
 
         private void OpenFile()
         {
+//----------------------------------------------------------------- STATE --------------------------------------------------------------------------------
+            EditBtn.IsEnabled         = false;
+            CountBtn.IsEnabled        = false;
+            DeleteBtn.IsEnabled       = false;
+            Add_bacteriaBtn.IsEnabled = false;
+            SendCropImgBtn.IsEnabled  = false;
+            AddSegmentBtn.IsEnabled   = false;
+
+//----------------------------------------------------------------- STATE --------------------------------------------------------------------------------
+
+
+
+
+
 
             OpenFileDialog openFileDialog = new OpenFileDialog();
             openFileDialog.Title = "Select Image";
@@ -279,6 +309,13 @@ namespace GLORY_TO_GOD
             FileButton.Foreground = Foreground_color;
 
             currentImagePath = SelectImgPath;
+
+
+
+            var saveFileName = "image_canvas.jpg";
+            SourceImg.SaveImage(saveFileName);
+            //SourceImgSegment = Directory.GetCurrentDirectory() + "\\" + saveFileName;
+            currentImagePath = Directory.GetCurrentDirectory() + "\\" + saveFileName;
 
         }
 
@@ -754,16 +791,31 @@ namespace GLORY_TO_GOD
             //string total = pythonInterface.SendCommandAndReceiveRawString(command);
             //Total_Count_Value.Text = total;
 
+
+            if (applicationState == State.SEND_AUTO_MODE)
+            {
+                var statefulPoints = GenerateStatefulPoints();
+
+                string addPointsJson = JsonConvert.SerializeObject(statefulPoints);
+
+
+                var command = PythonInterface.BuildCommand("count", addPointsJson, currentImagePath);
+                string total = pythonInterface.SendCommandAndReceiveRawString(command);
+                Total_Count_Value.Text = total;
+            }
+            if (applicationState == State.SEND_SEGMENT_MODE)
+            {
+
+                var statefulPoints = GenerateStatefulPoints();
+
+                string addPointsJson = JsonConvert.SerializeObject(statefulPoints);
+
+
+                var command = PythonInterface.BuildCommand("count", addPointsJson, SourceImgSegment);
+                string total = pythonInterface.SendCommandAndReceiveRawString(command);
+                Total_Count_Value.Text = total;
+            }
             
-
-            var statefulPoints = GenerateStatefulPoints();
-
-            string addPointsJson = JsonConvert.SerializeObject(statefulPoints);
-
-
-            var command = PythonInterface.BuildCommand("count", addPointsJson, currentImagePath);
-            string total = pythonInterface.SendCommandAndReceiveRawString(command);
-            Total_Count_Value.Text = total;
 
 
         }
@@ -773,11 +825,7 @@ namespace GLORY_TO_GOD
 
         private void EditBtn_Click(object sender, RoutedEventArgs e)
         {
-
             applicationState = State.EDIT;
-
-
-
 
         }
 
@@ -811,12 +859,53 @@ namespace GLORY_TO_GOD
 
 
 
+        private void SendProcessPoints()
+        {
+
+            var statefulPoints = GenerateStatefulPoints();
+
+            string addPointsJson = JsonConvert.SerializeObject(statefulPoints);
+
+
+            var command = PythonInterface.BuildCommand("processpoint", addPointsJson, currentImagePath);
+
+            dynamic jsonResponse_processpoint = pythonInterface.SendCommandAndReceiveJson(command);
+
+            string total = jsonResponse_processpoint["total"];
+
+            Total_Count_Value.Text = total;
+
+            string imageUrl = jsonResponse_processpoint["image"];
+
+            Mat image = Cv2.ImRead(imageUrl);
+
+            if (image != null)
+            {
+                var bitmapSource = image.ToBitmapSource();
+
+                bitmapSource.Freeze();
+
+                ImgScreen.Dispatcher.Invoke(new Action(() =>
+                {
+                    ImgScreen.Source = null;
+                    ImgScreen.Source = bitmapSource;
+                }));
+            }
+            Canvas_On_ImgScreen.Children.Clear();
+
+
+        }
+
+
+
+
+
+
 
         private void Add_bacteriaBtn_Click(object sender, RoutedEventArgs e)
         {
             if (applicationState == State.EDIT)
             {
-
                 List<BackAction> listBackActions = backStack.ToList();
                 for (int i = 0; i < listBackActions.Count; i++)
                 {
@@ -830,90 +919,25 @@ namespace GLORY_TO_GOD
                         }
                     }
                 }
-
                 SendProcessPoints();
-                
-
             }
             applicationState = State.IDLE;
 
+
+
         }
 
 
-        private void SendProcessPoints()
-        {
-            //if (applicationState == State.SEND_AUTO_MODE)
-            //{
-            //    var statefulPoints = GenerateStatefulPoints();
-
-            //    string addPointsJson = JsonConvert.SerializeObject(statefulPoints);
+  
 
 
-            //    var command = PythonInterface.BuildCommand("processpoint", addPointsJson, currentImagePath);
-
-            //    dynamic jsonResponse_processpoint = pythonInterface.SendCommandAndReceiveJson(command);
-
-            //    string total = jsonResponse_processpoint["total"];
-
-            //    Total_Count_Value.Text = total;
-
-            //    string imageUrl = jsonResponse_processpoint["image"];
-
-            //    Mat image = Cv2.ImRead(imageUrl);
-
-            //    if (image != null)
-            //    {
-            //        var bitmapSource = image.ToBitmapSource();
-
-            //        bitmapSource.Freeze();
-
-            //        ImgScreen.Dispatcher.Invoke(new Action(() =>
-            //        {
-            //            ImgScreen.Source = null;
-            //            ImgScreen.Source = bitmapSource;
-            //        }));
-            //    }
-            //    Canvas_On_ImgScreen.Children.Clear();
-
-            //}
-            
-                var statefulPoints = GenerateStatefulPoints();
-
-                string addPointsJson = JsonConvert.SerializeObject(statefulPoints);
 
 
-                var command = PythonInterface.BuildCommand("processpoint", addPointsJson, SourceImgSegment);
-
-                dynamic jsonResponse_processpoint = pythonInterface.SendCommandAndReceiveJson(command);
-
-                string total = jsonResponse_processpoint["total"];
-
-                Total_Count_Value.Text = total;
-
-                string imageUrl = jsonResponse_processpoint["image"];
-
-                Mat image = Cv2.ImRead(imageUrl);
-
-                if (image != null)
-                {
-                    var bitmapSource = image.ToBitmapSource();
-
-                    bitmapSource.Freeze();
-
-                    ImgScreen.Dispatcher.Invoke(new Action(() =>
-                    {
-                        ImgScreen.Source = null;
-                        ImgScreen.Source = bitmapSource;
-                    }));
-                }
-                Canvas_On_ImgScreen.Children.Clear();
-
-            
-        }
 
   
         private void DeleteBtn_Click(object sender, RoutedEventArgs e)
         {
+
             if (applicationState == State.EDIT)
             {
                 List<BackAction> listBackActions = backStack.ToList();
@@ -927,13 +951,20 @@ namespace GLORY_TO_GOD
                         {
                             statePoint.action = "delete";
                         }
-                    }
-                    SendProcessPoints();
+                    }                   
                 }
+                SendProcessPoints();
             }
-
-            
+            applicationState = State.IDLE;
         }
+
+
+
+
+
+
+
+
 
         ///***********************************************************************************************************
         ///
@@ -983,7 +1014,12 @@ namespace GLORY_TO_GOD
 
         //            var saveFileName = "imgcropped.jpg";
         //            Console.WriteLine(saveFileName);
-        //            ImgAfterAddMask.SaveImage(saveFileName);
+        //            ImgAfterAddMask.SaveImage(
+        //
+        //
+        //
+        //
+        //            );
 
         //            currentImagePath = Directory.GetCurrentDirectory() + "\\" + saveFileName;
 
@@ -1015,17 +1051,40 @@ namespace GLORY_TO_GOD
 
             Canvas_On_ImgScreen.Children.Clear();
 
-            ImgScreen.Source = null;
+            ImgScreen.Source        = null;
 
-            applicationState = State.IDLE;
+            applicationState        = State.IDLE;
+
+            SegmentBtn.IsEnabled    = true;
+            Send_AutoBtn.IsEnabled  = true;
+            AddSegmentBtn.IsEnabled = false;
+
+
 
 
         }
         //--------------------------------------------------------------------------------------------------------------------------------------
 
 
+
+
+
+
         private void Send_AutoBtn_Click(object sender, RoutedEventArgs e)
         {
+
+//-----------------------------------------------------------STATE----------------------------------------------------------------------------
+            EditBtn.IsEnabled         = true;
+            CountBtn.IsEnabled        = true;
+            Add_bacteriaBtn.IsEnabled = true;
+            DeleteBtn.IsEnabled       = true;
+            SegmentBtn.IsEnabled      = false;
+            AddSegmentBtn.IsEnabled   = false;
+
+
+//-----------------------------------------------------------STATE--------------------------------------------------------------------------
+
+
             applicationState = State.SEND_AUTO_MODE;
 
             if (applicationState == State.SEND_AUTO_MODE)
@@ -1046,6 +1105,10 @@ namespace GLORY_TO_GOD
                 dynamic jsonResponse = pythonInterface.SendCommandAndReceiveJson(command);
 
                 bacteriaCentersJarray = jsonResponse["centers"];
+
+                string total = jsonResponse["total"];
+
+                Total_Count_Value.Text = total;
 
                 string imageUrl = jsonResponse["image"];
 
@@ -1266,6 +1329,20 @@ namespace GLORY_TO_GOD
         Mat ImgAfterSegment;
         private void SendCropImgBtn_Click(object sender, RoutedEventArgs e)
         {
+//-------------------------------------------------------STATE------------------------------------------------------------------------
+            EditBtn.IsEnabled         = true;
+            CountBtn.IsEnabled        = true;
+            Add_bacteriaBtn.IsEnabled = true;
+            DeleteBtn.IsEnabled       = true;
+            SegmentBtn.IsEnabled      = false;
+            AddSegmentBtn.IsEnabled   = false;
+            Send_AutoBtn.IsEnabled    = false;
+
+
+//--------------------------------------------------------STATE--------------------------------------------------------------------------
+
+
+
             applicationState = State.SEND_SEGMENT_MODE;
 
             if (applicationState == State.SEND_SEGMENT_MODE)
@@ -1288,9 +1365,10 @@ namespace GLORY_TO_GOD
                 var imgAferSecmented = Convert(BitmapConverter.ToBitmap(ImgAfterSegment));
                 ImgScreen.Source = imgAferSecmented;
 
-                var saveFileName = "imgcanvas.jpg";
+                var saveFileName = "image_canvas.jpg";
                 ImgAfterSegment.SaveImage(saveFileName);
-                SourceImgSegment = Directory.GetCurrentDirectory() + "\\" + saveFileName;
+                //SourceImgSegment = Directory.GetCurrentDirectory() + "\\" + saveFileName;
+                currentImagePath = Directory.GetCurrentDirectory() + "\\" + saveFileName;
 
                 DeletePolylineAndRectangle();
 
@@ -1306,12 +1384,21 @@ namespace GLORY_TO_GOD
 
                 string jsonCommand = JsonConvert.SerializeObject(polyPointList);
 
+                //---------
+                var command = PythonInterface.BuildCommand("segment", currentImagePath, jsonCommand);
 
-                var command = PythonInterface.BuildCommand("segment", SourceImgSegment, jsonCommand);
-                Mat image = pythonInterface.SendCommand(command);
+                dynamic jsonResponse_segment = pythonInterface.SendCommandAndReceiveJson(command);
 
+                string total = jsonResponse_segment["total"];
+
+                Total_Count_Value.Text = total;
+
+                string imageUrl = jsonResponse_segment["image"];
+
+                Mat image = Cv2.ImRead(imageUrl);
 
                 if (image != null)
+
                 {
                     var bitmapSource = image.ToBitmapSource();
 
@@ -1324,9 +1411,9 @@ namespace GLORY_TO_GOD
                     }));
                 }
             }
-
-           
+   
             
+       
         }
 
 
@@ -1478,18 +1565,12 @@ namespace GLORY_TO_GOD
 
         private void SegmentBtn_Click(object sender, RoutedEventArgs e)
         {
-            while (true)        
-            {
-                if (applicationState == State.SEND_AUTO_MODE)
-                {
-                    break;
 
-                }
-                else {
-                    applicationState = State.SEGMENT;
-                    break;
-                }
-            }
+            applicationState = State.SEGMENT;
+            AddSegmentBtn.IsEnabled  = true;
+            SendCropImgBtn.IsEnabled = true;
+            Send_AutoBtn.IsEnabled   = false;
+
             
             
         }
@@ -1520,8 +1601,9 @@ namespace GLORY_TO_GOD
         {
             List<PositionMouse> polyPoints = new List<PositionMouse>();
 
-            if (applicationState == State.SEGMENT)
-           {
+            if (applicationState == State.SEGMENT || applicationState == State.ADD_SEGMENT)
+            {
+      
                 PolyBackAction polyBackAction = new PolyBackAction();
                 polyBackAction.polyName = currentPolyName;
                 polyBackAction.mouseX = positionMouseX;
@@ -1536,14 +1618,14 @@ namespace GLORY_TO_GOD
                 PrintBackStack();
 
                 DrawPolies();
-           }
+            }
+
+            
 
             if (applicationState == State.EDIT)
             {
-
-
                 StatefulPointBackAction unstatepoint = new StatefulPointBackAction();
-    
+
                 unstatepoint.mouseX = positionMouseX;
                 unstatepoint.mouseY = positionMouseY;
 
@@ -1552,11 +1634,10 @@ namespace GLORY_TO_GOD
 
                 PositionMouse positionMouse = new PositionMouse(positionMouseX, positionMouseY);
 
-
-                DrawStatefulPoints(unstatepoint);               
-
+                DrawStatefulPoints(unstatepoint);
             }
 
+                      
 
 
 
@@ -1589,6 +1670,11 @@ namespace GLORY_TO_GOD
             Canvas.SetTop(smallDot, statefulPointBackAction.mouseY);
             Canvas_On_ImgScreen.Children.Add(smallDot);
         }
+
+
+
+
+
         private void SelectTopPolyToDraw()
         {
 
@@ -1749,7 +1835,13 @@ namespace GLORY_TO_GOD
 
         private void AddSegmentBtn_Click(object sender, RoutedEventArgs e)
         {
-            currentPolyName++;
+            applicationState = State.ADD_SEGMENT;
+
+            if (applicationState == State.ADD_SEGMENT)
+            {
+                currentPolyName++;
+            }
+    
         }
 
     }

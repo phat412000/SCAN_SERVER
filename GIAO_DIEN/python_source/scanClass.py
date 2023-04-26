@@ -124,7 +124,8 @@ class ScanClass:
             centerOfBacteriascale = (int(centerX * 3.6), int(centerY * 3.55))
 
             bacteriaCenters.append([centerX, centerY])
-            bacteriaCentersScale = ([centerOfBacteriascale])
+            #bacteriaCentersScale = ([centerOfBacteriascale])
+            bacteriaCentersScale.append([int(centerX * 3.6), int(centerY * 3.55)])
 
             isInsideContour = False
 
@@ -145,12 +146,12 @@ class ScanClass:
                 continue
 
             
-            cv2.putText(finalmage,str(countBacteria), centerOfBacteria, cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0,0,255), 1)
-            cv2.putText(imageOrginal, str(countBacteria), centerOfBacteriascale, cv2.FONT_HERSHEY_SIMPLEX, 1.1, (0,0,255), 2)
+            #cv2.putText(finalmage,str(countBacteria), centerOfBacteria, cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0,0,255), 1)
+            #cv2.putText(imageOrginal, str(countBacteria), centerOfBacteriascale, cv2.FONT_HERSHEY_SIMPLEX, 1.1, (0,0,255), 2)
 
             
             bacteriaContours.append(biggestContourInAzone)
-            cv2.drawContours(finalmage, bacteriaContours , -1, (255,0,0), 1)
+            #cv2.drawContours(finalmage, bacteriaContours , -1, (255,0,0), 1)
             
             
             bacteriaContoursScale.append(biggestContourInAzonescale)
@@ -163,8 +164,8 @@ class ScanClass:
             showed = ("bacteria id: " + str(countBacteria) + " size: " + str(currentContourSize) + " position: " + str(centerOfBacteria) )
             bacteriaColonies.append(centerOfBacteria)
             
-        print("Scaled biggestcontour", biggestContourInAzonescale)  
-        print("biggestcontour", biggestContourInAzone)
+        #print("Scaled biggestcontour", biggestContourInAzonescale)  
+        #print("biggestcontour", biggestContourInAzone)
 
             
 

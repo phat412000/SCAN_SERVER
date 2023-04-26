@@ -137,20 +137,20 @@ namespace Pythonzxrr
         {
             pipeServerStream = new NamedPipeServerStream("process_pipe", PipeDirection.InOut, 1, PipeTransmissionMode.Message);
 
-            var processstartinfo = new ProcessStartInfo();
+            //var processstartinfo = new ProcessStartInfo();
 
-            processstartinfo.WorkingDirectory = Directory.GetCurrentDirectory();
-            processstartinfo.FileName = "cmd.exe";
+            //processstartinfo.WorkingDirectory = Directory.GetCurrentDirectory();
+            //processstartinfo.FileName = "cmd.exe";
 
 
-            processstartinfo.UseShellExecute = false;
-            processstartinfo.RedirectStandardInput = true;
-            processstartinfo.CreateNoWindow = true;
+            //processstartinfo.UseShellExecute = false;
+            //processstartinfo.RedirectStandardInput = true;
+            //processstartinfo.CreateNoWindow = true;
 
-            var process = Process.Start(processstartinfo);
+            //var process = Process.Start(processstartinfo);
 
-            process.StandardInput.WriteLine("python_source\\start_server.cmd");
-            process.StandardInput.Flush();
+            //process.StandardInput.WriteLine("python_source\\start_server.cmd");
+            //process.StandardInput.Flush();
 
 
             pipeServerStream.WaitForConnection();
