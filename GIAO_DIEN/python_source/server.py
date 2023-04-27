@@ -8,6 +8,7 @@ import time
 
 import json
 
+
 import segmentation_models_pytorch as smp
 
 import warnings
@@ -25,7 +26,6 @@ ACTIVATION = 'sigmoid'
 
 
 preprocessing_fn = smp.encoders.get_preprocessing_fn(ENCODER, ENCODER_WEIGHTS)
-
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(DEVICE)
 if os.path.exists('best_model_gray.pth'):
@@ -35,6 +35,20 @@ else:
     best_model = None  
     print("cannot load model")
 
+#preprocessing_fn = smp.encoders.get_preprocessing_fn(ENCODER, ENCODER_WEIGHTS)
+#DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+#print(DEVICE)
+#if os.path.exists('best_model_disk.pth'):
+#    best_model_disk = torch.load('best_model_disk.pth', map_location=DEVICE)
+#    print('Loaded UNet model from this run, disk model.')
+#else:
+#    best_model_disk = None  
+#if os.path.exists('best_model_gray_colony800.pth'):
+#    best_model_colony = torch.load('best_model_gray_colony800.pth', map_location=DEVICE)
+#    print('Loaded UNet model from this run, colony model.')
+#else:
+#    best_model_colony = None  
+#    print("cant load model")
 
 ScanObject = ScanClass()
 
@@ -110,7 +124,8 @@ def predictCode2st(image):
     startTime = time.time()
     img_resize = cv2.resize(image, (800,800), interpolation = cv2.INTER_AREA)
     image_RGB = cv2.cvtColor(img_resize, cv2.COLOR_BGR2RGB).astype("float32") # load ảnh vào sau đó convert sang rgb
-    # cv2_imshow(image_RGB)
+    #cv2_imshow(image_RGB)
+    cv2.imwrite("image_RGB.jpg",image_RGB)
     if best_model_disk is not None:  # nếu có file model .pth và load thành công
         image_RGB = preprocessing_fn(image_RGB)
         image_RGB = np.transpose(image_RGB, (2, 0, 1)).astype("float32")
@@ -139,16 +154,20 @@ def predictCode2st(image):
             M = cv2.moments(cnt)
             if M['m00'] != 0:
                 cx_ = int(M['m10']/M['m00'])
-                cy_ = int(M['m01']/M['m00'])
+                cy_ = int(M['m01']/M['m00'])                
                 cx = int(cx_*2.88)
                 cy = int(cy_*2.84)
-        print(i)
-        print(cx, cy)
+        print("itme",cx, cy)
+            
         img_input_colony_cropped = image[cy-700:cy+700, cx-700:cx+700]
-        # mask_anno_crop = mask_anno[cy-700:cy+700, cx-700:cx+700]
+           #cv2.imwrite("img_input_colony_cropped.jpg",img_input_colony_cropped)
         mask_disk = cv2.resize(result_disk, (2304,2272), interpolation = cv2.INTER_AREA)
         mask_disk = mask_disk[cy-700:cy+700, cx-700:cx+700]
         mask_disk = cv2.resize(mask_disk, (800,800), interpolation = cv2.INTER_AREA)
+        cv2.imwrite("mask_disk_1st.jpg", mask_disk)
+        print("handle image sent 1st")
+       
+        
         if best_model_colony is not None:
           input_detect_colony_img = img_input_colony_cropped
 
@@ -159,7 +178,7 @@ def predictCode2st(image):
           img_v[:, :, 0] = image_HSV[:, :, 2]
           img_v[:, :, 1] = image_HSV[:, :, 2]
           img_v[:, :, 2] = image_HSV[:, :, 2]
-          cv2_imshow(img_v)
+          #cv2.imwrite("img_v.jpg",img_v)
           image_RGB_2 = preprocessing_fn(img_v)
           image_RGB_2 = np.transpose(image_RGB_2, (2, 0, 1)).astype("float32")
           colony = np.zeros(img_resize_2.shape, dtype='uint8')
@@ -171,14 +190,17 @@ def predictCode2st(image):
           img_colony_final_result = cv2.bitwise_and(result_colony, mask_disk)
           print("=================================== ",time.time()- startTime)
 
-          cv2_imshow(img_colony_final_result)
-
-          return img_colony_final_result
-
+          cv2.imwrite("img_colony_final_result.jpg",img_colony_final_result)
+          return img_colony_final_result, input_detect_colony_img
 
 
 
 
+
+
+
+
+#------------------------------------------------------------------------------------------------
 
 def main():
     fileHandle = win32file.CreateFile(
@@ -201,6 +223,12 @@ def main():
 
         commandArray = dataString.split("$$$")
         
+
+
+
+
+
+
 
 #-----------------------------------------------------------------------------------------------------
 
@@ -225,8 +253,8 @@ def main():
                     contourPoints.append([]) 
                     currentPolyName = name
                  
-                mouseX = int(p['mouseX'] * 3.5 / 3.6) # *6.5 vi ti le tu canvas len anh goc, / 2 vi giam anh goc di cho nhe segment
-                mouseY = int(p['mouseY'] * 3.5 / 3.6)
+                mouseX = int(p['mouseX'] * 3.6 ) # *6.5 vi ti le tu canvas len anh goc, / 2 vi giam anh goc di cho nhe segment
+                mouseY = int(p['mouseY'] * 3.55 )
 
                 contourPoints[-1].append([mouseX, mouseY])
             
@@ -238,17 +266,11 @@ def main():
                 contour = np.array(points).reshape((-1,1,2)).astype(np.int32)
 
                 segmentcontours.append(contour)
-
-
-            #imageResize = cv2.resize(image, (828,567))
-            #image = cv2.resize(image, (int(image.shape[1]/3), int(image.shape[1]/3)))
             
             image_url = cv2.resize(image, (640,640))
 
-            mask_colonys = predictCode1st(image)
-
-            GrayImg = ScanObject.GrayImage(mask_colonys)
-
+            mask_colony = predictCode1st(image)
+            GrayImg = ScanObject.GrayImage(mask_colony)
             threshImageAfterSegment = thresholdImage(GrayImg, 80)
 
             labelsImg = distanceImage(threshImageAfterSegment, 10)
@@ -298,8 +320,8 @@ def main():
 
             for p in polyLists:
  
-                mouseX = int(p['Item1'] * 3.5 / 3.6 ) # *6.5 vi ti le tu canvas len anh goc, / 2 vi giam anh goc di cho nhe segment
-                mouseY = int(p['Item2'] * 3.5 / 3.55 )
+                mouseX = int(p['Item1'] *  3.6 ) # *6.5 vi ti le tu canvas len anh goc, / 2 vi giam anh goc di cho nhe segment
+                mouseY = int(p['Item2'] *  3.55 )
 
                 contourPoints.append([mouseX, mouseY])
 
@@ -314,10 +336,8 @@ def main():
 
             image_url = cv2.resize(image, (640,640))
             
-            mask_colonys = predictCode1st(image)
-
-            GrayImg = ScanObject.GrayImage(mask_colonys)
-
+            mask_colony = predictCode1st(image)
+            GrayImg  = ScanObject.GrayImage(mask_colony)
             threshImageAfterSegment = thresholdImage(GrayImg, 80)
 
             labelsImg = distanceImage(threshImageAfterSegment, 10)
@@ -326,18 +346,22 @@ def main():
             
             #cv2.imwrite("ImageAfterSegment.jpg", outputImageSegment)
             cv2.imwrite("imageOriginal.jpg", imageOrginal)
-            print("finish written image")
+         
+            print("finish written image")   
 
             jsonResponse = {
                 "total": str(total),
                 "centers": bacteriaCentersScale,
                 "image": os.getcwd() + "\\imageOriginal.jpg"
+   
             }
             jsonResponse = "$START$" + json.dumps(jsonResponse) + "$END$"
 
             win32file.WriteFile(fileHandle, bytes(jsonResponse,"UTF-8"),None)
 
         
+
+
 
 
 
@@ -360,18 +384,14 @@ def main():
 
             image_url = cv2.resize(image, (640,640))
             
-            mask_colonys = predictCode1st(image)
-
-            GrayImg = ScanObject.GrayImage(mask_colonys)
-
-            threshImageAfterSegment = thresholdImage(GrayImg, 80)
-
+            mask_colony = predictCode1st(image)
+            GrayImg = ScanObject.GrayImage(mask_colony)
+            threshImageAfterSegment = thresholdImage(GrayImg,80)
 
             labelsImg = distanceImage(threshImageAfterSegment, 10)
 
             _ , bacteriaCenters, total, bacteriaContours, _ , bacteriaCentersScale, bacteriaContoursScale = ScanObject.CountColoni(labelsImg,GrayImg,image_url,segmentcontours,image)
-            
-            
+                  
             parsedStafulPoints = []
           
             print("bac",bacteriaContoursScale)
@@ -379,8 +399,8 @@ def main():
             print("total scanobject",total)
             for p in statefulPointList:
  
-                mouseX = int(p['mouseX'] *  3.6) # *6.5 vi ti le tu canvas len anh goc, / 2 vi giam anh goc di cho nhe segment
-                mouseY = int(p['mouseY'] * 3.55)
+                mouseX = int(p['mouseX'] *3.6) 
+                mouseY = int(p['mouseY'] *3.55)
 
                 parsedStafulPoints.append((mouseX, mouseY, p["action"]))
 

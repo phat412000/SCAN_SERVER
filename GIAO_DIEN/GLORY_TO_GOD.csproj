@@ -207,9 +207,11 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
+    <None Include="python_source\best_model_disk.pth" />
     <None Include="python_source\best_model_gray.pth">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="python_source\best_model_gray_colony800.pth" />
     <None Include="python_source\best_model_lan2.pth">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

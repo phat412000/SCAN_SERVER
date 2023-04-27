@@ -85,7 +85,9 @@ class ScanClass:
         bacteriaCentersScale = []
 
         finalmage = roi.copy()
+
         imageOrginal = imageOrginal.copy()
+
         bacteriaContours = []
         bacteriaContoursScale = []
         #print(finalmage.shape)
@@ -99,13 +101,13 @@ class ScanClass:
             mask[labelsImg == label] = 255
 
             
-
             cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             cnts = cnts[0] if len(cnts) == 2 else cnts[1]
 
             biggestContourInAzone = max(cnts, key=cv2.contourArea)
 
             biggestContourInAzonescale = np.array(biggestContourInAzone *  [[3.6,3.55]])
+         
             biggestContourInAzonescale =  np.round(biggestContourInAzonescale).astype(int)
 
 
@@ -122,19 +124,21 @@ class ScanClass:
 
             centerOfBacteria = (centerX,centerY)
             centerOfBacteriascale = (int(centerX * 3.6), int(centerY * 3.55))
+            
 
             bacteriaCenters.append([centerX, centerY])
             #bacteriaCentersScale = ([centerOfBacteriascale])
             bacteriaCentersScale.append([int(centerX * 3.6), int(centerY * 3.55)])
+            
 
             isInsideContour = False
 
                 
-            #cv2.drawContours(finalmage,segmentcontours, -1, (0,255,0), 3)
+            #cv2.drawContours(imageOrginal,segmentcontours, -1, (0,255,0), 3)
 
             for segmentContour in segmentcontours:
 
-                result = cv2.pointPolygonTest(segmentContour, centerOfBacteria, False)
+                result = cv2.pointPolygonTest(segmentContour, centerOfBacteriascale, False)
 
                 if result == 1.0 or result == 0.0:
                     isInsideContour = True

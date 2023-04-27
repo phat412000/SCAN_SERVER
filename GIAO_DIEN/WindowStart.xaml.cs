@@ -265,6 +265,7 @@ namespace GLORY_TO_GOD
             Add_bacteriaBtn.IsEnabled = false;
             SendCropImgBtn.IsEnabled  = false;
             AddSegmentBtn.IsEnabled   = false;
+            CountBtn.IsEnabled        = false;
 
 //----------------------------------------------------------------- STATE --------------------------------------------------------------------------------
 
@@ -1073,16 +1074,16 @@ namespace GLORY_TO_GOD
         private void Send_AutoBtn_Click(object sender, RoutedEventArgs e)
         {
 
-//-----------------------------------------------------------STATE----------------------------------------------------------------------------
-            EditBtn.IsEnabled         = true;
-            CountBtn.IsEnabled        = true;
+            //-----------------------------------------------------------STATE----------------------------------------------------------------------------
+            EditBtn.IsEnabled = true;
+            CountBtn.IsEnabled = true;
             Add_bacteriaBtn.IsEnabled = true;
-            DeleteBtn.IsEnabled       = true;
-            SegmentBtn.IsEnabled      = false;
-            AddSegmentBtn.IsEnabled   = false;
+            DeleteBtn.IsEnabled = true;
+            SegmentBtn.IsEnabled = false;
+            AddSegmentBtn.IsEnabled = false;
 
 
-//-----------------------------------------------------------STATE--------------------------------------------------------------------------
+            //-----------------------------------------------------------STATE--------------------------------------------------------------------------
 
 
             applicationState = State.SEND_AUTO_MODE;
@@ -1124,6 +1125,8 @@ namespace GLORY_TO_GOD
                     {
                         ImgScreen.Source = null;
                         ImgScreen.Source = bitmapSource;
+
+
                     }));
                 }
 
